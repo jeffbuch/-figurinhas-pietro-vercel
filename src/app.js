@@ -13,39 +13,72 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
+const normalize = (value) => String(value ?? '').trim();
+
+const normalizeCode = (value) =>
+  normalize(value).toUpperCase().replace(/\s+/g, '');
+
+function escapeHtml(value) {
+  return normalize(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 const countryFlag = (sigla = '') => {
+  const code = normalize(sigla).toUpperCase();
+
   const map = {
-    ARG: '🇦🇷',
-    BRA: '🇧🇷',
-    USA: '🇺🇸',
-    MEX: '🇲🇽',
-    CAN: '🇨🇦',
-    FRA: '🇫🇷',
-    GER: '🇩🇪',
-    ESP: '🇪🇸',
-    POR: '🇵🇹',
-    ENG: '🏴',
-    ITA: '🇮🇹',
-    URU: '🇺🇾',
-    COL: '🇨🇴',
-    CHI: '🇨🇱',
-    JPN: '🇯🇵',
-    KOR: '🇰🇷',
-    AUS: '🇦🇺',
-    MAR: '🇲🇦',
-    SEN: '🇸🇳',
-    GHA: '🇬🇭',
+    FWC: '🏆',
     FIFA: '🏆',
     CC: '🥤',
-    COC: '🥤'
+    COC: '🥤',
+
+    ARG: '🇦🇷',
+    AUS: '🇦🇺',
+    BEL: '🇧🇪',
+    BIH: '🇧🇦',
+    BRA: '🇧🇷',
+    CAN: '🇨🇦',
+    CHI: '🇨🇱',
+    CIV: '🇨🇮',
+    COL: '🇨🇴',
+    CRC: '🇨🇷',
+    CRO: '🇭🇷',
+    CUW: '🇨🇼',
+    CZE: '🇨🇿',
+    DEN: '🇩🇰',
+    ECU: '🇪🇨',
+    ENG: '🏴',
+    ESP: '🇪🇸',
+    FRA: '🇫🇷',
+    GER: '🇩🇪',
+    GHA: '🇬🇭',
+    HAI: '🇭🇹',
+    ITA: '🇮🇹',
+    JPN: '🇯🇵',
+    KOR: '🇰🇷',
+    MAR: '🇲🇦',
+    MEX: '🇲🇽',
+    NED: '🇳🇱',
+    PAR: '🇵🇾',
+    POL: '🇵🇱',
+    POR: '🇵🇹',
+    QAT: '🇶🇦',
+    RSA: '🇿🇦',
+    SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+    SEN: '🇸🇳',
+    SRB: '🇷🇸',
+    SUI: '🇨🇭',
+    TUR: '🇹🇷',
+    URU: '🇺🇾',
+    USA: '🇺🇸'
   };
 
-  return map[String(sigla).toUpperCase()] || '⚽';
+  return map[code] || '⚽';
 };
-
-const normalize = (v) => String(v ?? '').trim();
-
-const normalizeCode = (v) => normalize(v).toUpperCase().replace(/\s+/g, '');
 
 function isOwned(sticker) {
   const status = normalize(sticker.status).toLowerCase();
@@ -57,8 +90,9 @@ function statusLabel(sticker) {
 }
 
 function repeatedCount(sticker) {
-  const n = Number(sticker.repetidas || 0);
-  return Number.isFinite(n) ? n : 0;
+  const raw = String(sticker?.repetidas ?? '0').replace(',', '.');
+  const number = Number(raw);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
 }
 
 function saveTradeFavorites() {
@@ -89,6 +123,7 @@ async function apiFetch(url, options = {}) {
   });
 
   const text = await res.text();
+
   let data = null;
 
   try {
@@ -108,7 +143,8 @@ async function loadData() {
   try {
     state.loading = true;
 
-    $('resultCount').textContent = 'Carregando...';
+    const resultCount = $('resultCount');
+    if (resultCount) resultCount.textContent = 'Carregando...';
 
     const data = await apiFetch('/api/getData');
 
@@ -129,7 +165,8 @@ async function loadData() {
       applyFilters();
       showToast('Usando dados salvos offline');
     } else {
-      $('resultCount').textContent = 'Erro ao carregar dados';
+      const resultCount = $('resultCount');
+      if (resultCount) resultCount.textContent = 'Erro ao carregar dados';
       showToast(err.message);
     }
   } finally {
@@ -138,30 +175,41 @@ async function loadData() {
 }
 
 function applyFilters() {
-  const q = normalize(state.query).toLowerCase();
+  const query = normalize(state.query).toLowerCase();
 
-  state.filtered = state.stickers.filter((s) => {
+  state.filtered = state.stickers.filter((sticker) => {
     const haystack = [
-      s.grupo,
-      s.pais,
-      s.sigla,
-      s.numero,
-      s.codigo,
-      s.status,
-      s.observacoes
+      sticker.grupo,
+      sticker.pais,
+      sticker.sigla,
+      sticker.numero,
+      sticker.codigo,
+      sticker.status,
+      sticker.observacoes
     ]
       .map(normalize)
       .join(' ')
       .toLowerCase();
 
-    const matchesQuery = !q || haystack.includes(q);
+    const matchesQuery = !query || haystack.includes(query);
 
     let matchesFilter = true;
 
-    if (state.filter === 'missing') matchesFilter = !isOwned(s);
-    if (state.filter === 'owned') matchesFilter = isOwned(s);
-    if (state.filter === 'repeated') matchesFilter = repeatedCount(s) > 0;
-    if (state.filter === 'trade') matchesFilter = state.tradeFavorites.has(normalizeCode(s.codigo));
+    if (state.filter === 'missing') {
+      matchesFilter = !isOwned(sticker);
+    }
+
+    if (state.filter === 'owned') {
+      matchesFilter = isOwned(sticker);
+    }
+
+    if (state.filter === 'repeated') {
+      matchesFilter = repeatedCount(sticker) > 0;
+    }
+
+    if (state.filter === 'trade') {
+      matchesFilter = state.tradeFavorites.has(normalizeCode(sticker.codigo));
+    }
 
     return matchesQuery && matchesFilter;
   });
@@ -180,23 +228,31 @@ function renderSummary() {
   const total = state.stickers.length;
   const owned = state.stickers.filter(isOwned).length;
   const missing = Math.max(total - owned, 0);
-  const repeated = state.stickers.reduce((sum, s) => sum + repeatedCount(s), 0);
+  const repeated = state.stickers.reduce((sum, sticker) => {
+    return sum + repeatedCount(sticker);
+  }, 0);
+
   const percent = total ? Math.round((owned / total) * 100) : 0;
 
-  $('statTotal').textContent = total;
-  $('statOwned').textContent = owned;
-  $('statMissing').textContent = missing;
-  $('statRepeated').textContent = repeated;
+  if ($('statTotal')) $('statTotal').textContent = total;
+  if ($('statOwned')) $('statOwned').textContent = owned;
+  if ($('statMissing')) $('statMissing').textContent = missing;
+  if ($('statRepeated')) $('statRepeated').textContent = repeated;
 
-  $('progressPercent').textContent = `${percent}%`;
-  $('progressText').textContent = `${owned} de ${total} figurinhas`;
-  $('progressBar').style.width = `${percent}%`;
+  if ($('progressPercent')) $('progressPercent').textContent = `${percent}%`;
+  if ($('progressText')) $('progressText').textContent = `${owned} de ${total} figurinhas`;
+  if ($('progressBar')) $('progressBar').style.width = `${percent}%`;
 }
 
 function renderStickers() {
   const grid = $('stickersGrid');
+  const resultCount = $('resultCount');
 
-  $('resultCount').textContent = `${state.filtered.length} resultado(s)`;
+  if (!grid) return;
+
+  if (resultCount) {
+    resultCount.textContent = `${state.filtered.length} resultado(s)`;
+  }
 
   grid.innerHTML = '';
 
@@ -224,14 +280,14 @@ function renderStickers() {
 
     card.innerHTML = `
       <div class="sticker-top">
-        <span class="code">${code || '-'}</span>
+        <span class="code">${escapeHtml(code || '-')}</span>
         <span class="flag">${countryFlag(sticker.sigla)}</span>
       </div>
 
-      <h3>${normalize(sticker.pais) || 'Sem país/seção'}</h3>
+      <h3>${escapeHtml(sticker.pais) || 'Sem país/seção'}</h3>
 
       <p class="meta">
-        ${normalize(sticker.grupo)} • Nº ${normalize(sticker.numero) || '-'}
+        ${escapeHtml(sticker.grupo)} • Nº ${escapeHtml(sticker.numero) || '-'}
       </p>
 
       <div class="badges">
@@ -245,18 +301,18 @@ function renderStickers() {
       </div>
 
       <div class="card-actions">
-        <button class="own-btn" data-action="toggle-owned" data-code="${code}">
+        <button class="own-btn" data-action="toggle-owned" data-code="${escapeHtml(code)}" type="button">
           ${owned ? 'Marcar como Falta' : 'Marcar como Tenho'}
         </button>
 
-        <button class="trade-fav-btn" data-action="trade" data-code="${code}" title="Favoritar para troca">
+        <button class="trade-fav-btn" data-action="trade" data-code="${escapeHtml(code)}" type="button" title="Favoritar para troca">
           ${favorited ? '★' : '☆'}
         </button>
 
         <div class="repeat-control">
-          <button data-action="repeat-minus" data-code="${code}">−</button>
+          <button data-action="repeat-minus" data-code="${escapeHtml(code)}" type="button">−</button>
           <span>${repeats} repetida(s)</span>
-          <button data-action="repeat-plus" data-code="${code}">+</button>
+          <button data-action="repeat-plus" data-code="${escapeHtml(code)}" type="button">+</button>
         </div>
       </div>
     `;
@@ -269,15 +325,16 @@ function renderStickers() {
 
 function renderTradePanel() {
   const panel = $('tradePanel');
+  const list = $('tradeList');
+
+  if (!panel || !list) return;
 
   panel.classList.toggle('hidden', !state.tradeMode);
-
-  const list = $('tradeList');
 
   list.innerHTML = '';
 
   const favorites = [...state.tradeFavorites]
-    .map((code) => state.stickers.find((s) => normalizeCode(s.codigo) === code))
+    .map((code) => state.stickers.find((sticker) => normalizeCode(sticker.codigo) === code))
     .filter(Boolean);
 
   if (!favorites.length) {
@@ -286,12 +343,15 @@ function renderTradePanel() {
   }
 
   for (const sticker of favorites) {
+    const code = normalizeCode(sticker.codigo);
+
     const item = document.createElement('div');
     item.className = 'mini-item';
 
     item.innerHTML = `
-      <strong>${normalizeCode(sticker.codigo)} — ${normalize(sticker.pais)}</strong>
-      <button class="ghost-btn" data-action="trade-remove" data-code="${normalizeCode(sticker.codigo)}">
+      <strong>${escapeHtml(code)} — ${escapeHtml(sticker.pais)}</strong>
+
+      <button class="ghost-btn" data-action="trade-remove" data-code="${escapeHtml(code)}" type="button">
         Remover
       </button>
     `;
@@ -303,50 +363,101 @@ function renderTradePanel() {
 function renderGroupProgress() {
   const wrap = $('groupProgress');
 
+  if (!wrap) return;
+
   wrap.innerHTML = '';
+  wrap.className = 'country-progress-grid';
 
   const groups = new Map();
 
-  for (const s of state.stickers) {
-    const key = normalize(s.grupo) || 'Sem grupo';
+  for (const sticker of state.stickers) {
+    const pais = normalize(sticker.pais) || 'Sem seção';
+    const sigla = normalize(sticker.sigla) || '';
+    const grupo = normalize(sticker.grupo) || 'Sem grupo';
+
+    const key = `${pais}||${sigla}||${grupo}`;
 
     if (!groups.has(key)) {
-      groups.set(key, { total: 0, owned: 0 });
+      groups.set(key, {
+        pais,
+        sigla,
+        grupo,
+        total: 0,
+        owned: 0,
+        repeated: 0
+      });
     }
 
-    const g = groups.get(key);
+    const item = groups.get(key);
 
-    g.total++;
+    item.total += 1;
 
-    if (isOwned(s)) {
-      g.owned++;
+    if (isOwned(sticker)) {
+      item.owned += 1;
     }
+
+    item.repeated += repeatedCount(sticker);
   }
 
-  const sorted = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const items = [...groups.values()].sort((a, b) => {
+    const groupCompare = a.grupo.localeCompare(b.grupo, 'pt-BR');
+    if (groupCompare !== 0) return groupCompare;
 
-  for (const [group, data] of sorted) {
-    const percent = data.total ? Math.round((data.owned / data.total) * 100) : 0;
+    return a.pais.localeCompare(b.pais, 'pt-BR');
+  });
 
-    const row = document.createElement('div');
-    row.className = 'group-row';
+  for (const item of items) {
+    const missing = Math.max(item.total - item.owned, 0);
+    const percent = item.total ? Math.round((item.owned / item.total) * 100) : 0;
 
-    row.innerHTML = `
-      <strong>${group}</strong>
-      <span>${percent}%</span>
+    let ringClass = 'high';
 
-      <div class="group-progress-track">
-        <div class="group-progress-bar" style="width:${percent}%"></div>
+    if (percent < 40) {
+      ringClass = 'low';
+    } else if (percent < 70) {
+      ringClass = 'mid';
+    }
+
+    const card = document.createElement('article');
+    card.className = 'country-progress-card';
+
+    card.innerHTML = `
+      <div class="country-card-head">
+        <div class="country-card-title">
+          <span class="country-flag">${countryFlag(item.sigla)}</span>
+
+          <div>
+            <h3>${escapeHtml(item.pais)}</h3>
+            <p>${escapeHtml(item.grupo)}${item.sigla ? ` • ${escapeHtml(item.sigla)}` : ''}</p>
+          </div>
+        </div>
+
+        <span class="country-percent-pill">${percent}% completo</span>
+      </div>
+
+      <div class="country-card-body">
+        <div class="country-ring ${ringClass}" style="--progress:${percent}">
+          <span>${percent}%</span>
+        </div>
+
+        <div class="country-stats">
+          <strong>${item.owned}<small> / ${item.total}</small></strong>
+          <span>${missing} faltam</span>
+          <span>${item.repeated} repetidas</span>
+        </div>
       </div>
     `;
 
-    wrap.appendChild(row);
+    wrap.appendChild(card);
   }
 }
 
 function findSticker(code) {
   const normalized = normalizeCode(code);
-  return state.stickers.find((s) => normalizeCode(s.codigo) === normalized);
+
+  return state.stickers.find((sticker) => {
+    return normalizeCode(sticker.codigo) === normalized;
+  });
 }
 
 async function updateStickerLocalAndRemote(code, changes) {
@@ -470,17 +581,29 @@ function handleGridClick(event) {
 }
 
 function setupEvents() {
-  $('refreshBtn').addEventListener('click', loadData);
+  const refreshBtn = $('refreshBtn');
+  const searchInput = $('searchInput');
+  const tradeBtn = $('tradeBtn');
+  const clearTradeBtn = $('clearTradeBtn');
+  const confirmTradeBtn = $('confirmTradeBtn');
+  const stickersGrid = $('stickersGrid');
+  const tradeList = $('tradeList');
 
-  $('searchInput').addEventListener('input', (event) => {
-    state.query = event.target.value;
-    applyFilters();
-  });
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadData);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (event) => {
+      state.query = event.target.value;
+      applyFilters();
+    });
+  }
 
   document.querySelectorAll('.pill[data-filter]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.pill[data-filter]').forEach((b) => {
-        b.classList.remove('active');
+      document.querySelectorAll('.pill[data-filter]').forEach((item) => {
+        item.classList.remove('active');
       });
 
       btn.classList.add('active');
@@ -495,30 +618,43 @@ function setupEvents() {
     });
   });
 
-  $('tradeBtn').addEventListener('click', () => {
-    state.tradeMode = !state.tradeMode;
-    renderTradePanel();
-  });
+  if (tradeBtn) {
+    tradeBtn.addEventListener('click', () => {
+      state.tradeMode = !state.tradeMode;
+      renderTradePanel();
+    });
+  }
 
-  $('clearTradeBtn').addEventListener('click', () => {
-    state.tradeFavorites.clear();
-    saveTradeFavorites();
-    renderAll();
-  });
+  if (clearTradeBtn) {
+    clearTradeBtn.addEventListener('click', () => {
+      state.tradeFavorites.clear();
+      saveTradeFavorites();
+      renderAll();
+    });
+  }
 
-  $('confirmTradeBtn').addEventListener('click', confirmTrade);
+  if (confirmTradeBtn) {
+    confirmTradeBtn.addEventListener('click', confirmTrade);
+  }
 
-  $('stickersGrid').addEventListener('click', handleGridClick);
-  $('tradeList').addEventListener('click', handleGridClick);
+  if (stickersGrid) {
+    stickersGrid.addEventListener('click', handleGridClick);
+  }
+
+  if (tradeList) {
+    tradeList.addEventListener('click', handleGridClick);
+  }
 
   window.addEventListener('scanner:code', (event) => {
     const code = normalizeCode(event.detail.code);
     const sticker = findSticker(code);
     const result = $('scannerResult');
 
+    if (!result) return;
+
     if (!sticker) {
       result.innerHTML = `
-        <strong>${code}</strong><br>
+        <strong>${escapeHtml(code)}</strong><br>
         Código não encontrado na planilha.
       `;
 
@@ -528,43 +664,50 @@ function setupEvents() {
     const favorited = state.tradeFavorites.has(code);
 
     result.innerHTML = `
-      <strong>${code} — ${normalize(sticker.pais)}</strong><br>
+      <strong>${escapeHtml(code)} — ${escapeHtml(sticker.pais)}</strong><br>
 
       Status: ${statusLabel(sticker)} ${favorited ? '• ⭐ Favoritada' : ''}
 
       <div class="scanner-result-actions">
-        <button class="primary-btn" data-scan-own="${code}">
+        <button class="primary-btn" data-scan-own="${escapeHtml(code)}" type="button">
           Marcar como Tenho
         </button>
 
-        <button class="secondary-btn" data-scan-fav="${code}">
+        <button class="secondary-btn" data-scan-fav="${escapeHtml(code)}" type="button">
           ${favorited ? 'Remover da troca' : 'Favoritar troca'}
         </button>
       </div>
     `;
 
-    result.querySelector('[data-scan-own]').addEventListener('click', () => {
-      updateStickerLocalAndRemote(code, {
-        status: STATUS_OWNED
+    const ownBtn = result.querySelector('[data-scan-own]');
+    const favBtn = result.querySelector('[data-scan-fav]');
+
+    if (ownBtn) {
+      ownBtn.addEventListener('click', () => {
+        updateStickerLocalAndRemote(code, {
+          status: STATUS_OWNED
+        });
       });
-    });
+    }
 
-    result.querySelector('[data-scan-fav]').addEventListener('click', () => {
-      if (state.tradeFavorites.has(code)) {
-        state.tradeFavorites.delete(code);
-      } else {
-        state.tradeFavorites.add(code);
-      }
+    if (favBtn) {
+      favBtn.addEventListener('click', () => {
+        if (state.tradeFavorites.has(code)) {
+          state.tradeFavorites.delete(code);
+        } else {
+          state.tradeFavorites.add(code);
+        }
 
-      saveTradeFavorites();
-      renderAll();
+        saveTradeFavorites();
+        renderAll();
 
-      window.dispatchEvent(
-        new CustomEvent('scanner:code', {
-          detail: { code }
-        })
-      );
-    });
+        window.dispatchEvent(
+          new CustomEvent('scanner:code', {
+            detail: { code }
+          })
+        );
+      });
+    }
   });
 }
 
