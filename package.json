@@ -1,0 +1,17 @@
+{
+  "name": "figurinhas-pietro-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PWA para controle de figurinhas da Copa 2026 usando Google Sheets como banco de dados.",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev",
+    "build": "echo \"Static app - no build step required\""
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}

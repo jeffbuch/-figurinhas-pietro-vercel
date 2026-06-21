@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#101828" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Figurinhas" />
+  <title>Figurinhas Copa 2026</title>
+
+  <link rel="manifest" href="/public/manifest.json" />
+  <link rel="apple-touch-icon" href="/public/icon-180.png" />
+  <link rel="icon" href="/public/icon-512.png" />
+
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Álbum Copa 2026</p>
+        <h1>Controle de Figurinhas</h1>
+      </div>
+      <button id="refreshBtn" class="icon-btn" title="Atualizar">↻</button>
+    </header>
+
+    <main>
+      <section class="hero-card">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="Buscar ARG4, Brasil, Coca-Cola..." autocomplete="off" />
+        </div>
+
+        <div class="quick-actions">
+          <button class="pill active" data-filter="all">Todas</button>
+          <button class="pill" data-filter="missing">Faltantes</button>
+          <button class="pill" data-filter="owned">Tenho</button>
+          <button class="pill" data-filter="repeated">Repetidas</button>
+          <button class="pill" data-filter="trade">Troca</button>
+        </div>
+
+        <div class="mode-actions">
+          <button id="scannerBtn" class="primary-btn">📷 Scanner</button>
+          <button id="tradeBtn" class="secondary-btn">⭐ Modo Troca</button>
+        </div>
+      </section>
+
+      <section id="summary" class="summary-grid">
+        <div class="stat-card">
+          <span>Total</span>
+          <strong id="statTotal">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>Tenho</span>
+          <strong id="statOwned">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>Faltam</span>
+          <strong id="statMissing">0</strong>
+        </div>
+        <div class="stat-card">
+          <span>Repetidas</span>
+          <strong id="statRepeated">0</strong>
+        </div>
+      </section>
+
+      <section class="progress-card">
+        <div class="progress-head">
+          <div>
+            <h2>Progresso do álbum</h2>
+            <p id="progressText">0% completo</p>
+          </div>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section id="tradePanel" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h2>Modo Troca</h2>
+            <p>Favorite figurinhas durante a busca e efetive quando a troca acontecer.</p>
+          </div>
+          <button id="clearTradeBtn" class="ghost-btn">Limpar</button>
+        </div>
+        <div id="tradeList" class="mini-list"></div>
+        <button id="confirmTradeBtn" class="primary-btn full">Efetivar troca e marcar como Tenho</button>
+      </section>
+
+      <section class="section-head">
+        <h2>Figurinhas</h2>
+        <p id="resultCount">Carregando...</p>
+      </section>
+
+      <section id="stickersGrid" class="stickers-grid"></section>
+
+      <section class="progress-by-group">
+        <h2>Progresso por grupo</h2>
+        <div id="groupProgress"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="scannerModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2>Scanner</h2>
+          <p>Aponte para o código no topo direito da figurinha.</p>
+        </div>
+        <button id="closeScannerBtn" class="icon-btn">×</button>
+      </div>
+
+      <div class="camera-box">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <div class="scan-frame">
+          <span>Código</span>
+        </div>
+      </div>
+
+      <div class="scanner-actions">
+        <button id="scanNowBtn" class="primary-btn">Ler código</button>
+        <button id="stopCameraBtn" class="secondary-btn">Parar câmera</button>
+      </div>
+
+      <div class="manual-code">
+        <input id="manualCodeInput" type="text" placeholder="Digite manualmente: ARG4" autocapitalize="characters" />
+        <button id="manualCodeBtn" class="secondary-btn">Buscar</button>
+      </div>
+
+      <div id="scannerResult" class="scanner-result"></div>
+      <canvas id="scanCanvas" class="hidden"></canvas>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="/src/scanner.js"></script>
+  <script src="/src/app.js"></script>
+</body>
+</html>
