@@ -3,7 +3,7 @@ const OCR_SCRIPT_URLS = [
   'https://unpkg.com/tesseract.js@4.1.4/dist/tesseract.min.js',
 ];
 
-const AUTO_SCAN_INTERVAL = 2200;
+const AUTO_SCAN_INTERVAL = 1600;
 
 const VALID_PREFIXES = [
   'FIFA',
@@ -33,6 +33,7 @@ const VALID_PREFIXES = [
   'SEN',
   'GHA',
   'NGR',
+  'UZB',
   'CC',
 ];
 
@@ -69,7 +70,6 @@ function initScanner() {
 
 function bindScannerButton(id, callback) {
   const button = getEl(id);
-
   if (!button) return;
 
   button.addEventListener('click', (event) => {
@@ -105,8 +105,8 @@ async function openScanner() {
       audio: false,
       video: {
         facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
       },
     });
 
@@ -117,7 +117,7 @@ async function openScanner() {
     await waitForVideo(video);
     await video.play();
 
-    showScannerResult('Câmera aberta. O scan automático já está ativo.');
+    showScannerResult('Enquadre a figurinha inteira. O sistema vai ler só a área clara do código.');
     startAutoScan();
   } catch (error) {
     console.error(error);
@@ -140,7 +140,6 @@ function closeScanner() {
   }
 
   const modal = getEl('scannerModal');
-
   if (modal) {
     modal.classList.add('hidden');
   }
@@ -164,7 +163,7 @@ function startAutoScan() {
 
   window.setTimeout(() => {
     scanOnce({ manual: false });
-  }, 700);
+  }, 800);
 }
 
 function stopAutoScan() {
@@ -177,6 +176,7 @@ function stopAutoScan() {
 async function scanOnce({ manual = false } = {}) {
   if (!scannerState.isOpen) return;
   if (scannerState.foundCode) return;
+
   if (scannerState.isScanning) {
     if (manual) showScannerResult('Já estou tentando reconhecer o código...');
     return;
@@ -192,7 +192,11 @@ async function scanOnce({ manual = false } = {}) {
   scannerState.isScanning = true;
 
   try {
-    showScannerResult(manual ? 'Escaneando agora...' : 'Procurando código automaticamente...');
+    showScannerResult(
+      manual
+        ? 'Escaneando agora...'
+        : 'Procurando código automaticamente... mantenha a figurinha inteira no guia.'
+    );
 
     const croppedCanvas = captureCodeArea();
     const preparedCanvas = prepareForOCR(croppedCanvas);
@@ -208,7 +212,6 @@ async function scanOnce({ manual = false } = {}) {
       stopAutoScan();
 
       showScannerResult(`Código reconhecido: ${code}`);
-
       dispatchScannerCode(code);
 
       window.setTimeout(() => {
@@ -220,8 +223,8 @@ async function scanOnce({ manual = false } = {}) {
 
     showScannerResult(
       manual
-        ? 'Não consegui ler o código. Tente aproximar, melhorar a luz ou digitar manualmente.'
-        : 'Procurando código... mantenha a figurinha dentro do retângulo.'
+        ? 'Não consegui ler o código. Tente manter a figurinha inteira no guia ou digite manualmente.'
+        : 'Ainda procurando... mantenha a figurinha inteira visível e o código no quadro claro.'
     );
   } catch (error) {
     console.error(error);
@@ -229,7 +232,7 @@ async function scanOnce({ manual = false } = {}) {
     showScannerResult(
       manual
         ? 'Erro ao escanear. Tente digitar o código manualmente.'
-        : 'OCR carregando ou sem leitura ainda. Continue apontando para o código.'
+        : 'OCR carregando ou sem leitura ainda. Continue apontando a figurinha.'
     );
   } finally {
     scannerState.isScanning = false;
@@ -243,17 +246,16 @@ function captureCodeArea() {
   const sourceWidth = video.videoWidth;
   const sourceHeight = video.videoHeight;
 
-  let sx = sourceWidth * 0.15;
-  let sy = sourceHeight * 0.18;
-  let sw = sourceWidth * 0.74;
-  let sh = sourceHeight * 0.18;
+  let sx = sourceWidth * 0.60;
+  let sy = sourceHeight * 0.12;
+  let sw = sourceWidth * 0.25;
+  let sh = sourceHeight * 0.12;
 
   if (frame) {
     const videoRect = video.getBoundingClientRect();
     const frameRect = frame.getBoundingClientRect();
 
     const scale = Math.max(videoRect.width / sourceWidth, videoRect.height / sourceHeight);
-
     const displayedWidth = sourceWidth * scale;
     const displayedHeight = sourceHeight * scale;
 
@@ -271,24 +273,30 @@ function captureCodeArea() {
   sw = clamp(sw, 1, sourceWidth - sx);
   sh = clamp(sh, 1, sourceHeight - sy);
 
+  const paddingX = sw * 0.10;
+  const paddingY = sh * 0.18;
+
+  sx = clamp(sx - paddingX, 0, sourceWidth - 1);
+  sy = clamp(sy - paddingY, 0, sourceHeight - 1);
+  sw = clamp(sw + paddingX * 2, 1, sourceWidth - sx);
+  sh = clamp(sh + paddingY * 2, 1, sourceHeight - sy);
+
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(sw);
   canvas.height = Math.round(sh);
 
   const context = canvas.getContext('2d', { willReadFrequently: true });
-
   context.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
   return canvas;
 }
 
 function prepareForOCR(sourceCanvas) {
-  const maxWidth = 1200;
-  const scale = sourceCanvas.width > maxWidth ? maxWidth / sourceCanvas.width : 1;
+  const upscale = 2.2;
 
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
-  canvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+  canvas.width = Math.max(1, Math.round(sourceCanvas.width * upscale));
+  canvas.height = Math.max(1, Math.round(sourceCanvas.height * upscale));
 
   const context = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -305,13 +313,14 @@ function prepareForOCR(sourceCanvas) {
     const blue = data[index + 2];
 
     let gray = red * 0.299 + green * 0.587 + blue * 0.114;
-
-    gray = (gray - 128) * 1.65 + 128;
+    gray = (gray - 128) * 1.9 + 128;
     gray = clamp(gray, 0, 255);
 
-    data[index] = gray;
-    data[index + 1] = gray;
-    data[index + 2] = gray;
+    const binary = gray > 150 ? 255 : 0;
+
+    data[index] = binary;
+    data[index + 1] = binary;
+    data[index + 2] = binary;
   }
 
   context.putImageData(imageData, 0, 0);
@@ -321,9 +330,7 @@ function prepareForOCR(sourceCanvas) {
 
 async function recognizeText(canvas) {
   const worker = await getOCRWorker();
-
   const result = await worker.recognize(canvas);
-
   return result?.data?.text || '';
 }
 
@@ -380,13 +387,17 @@ function injectScript(src) {
     const existingScript = document.querySelector(`script[src="${src}"]`);
 
     if (existingScript) {
+      if (window.Tesseract) {
+        resolve();
+        return;
+      }
+
       existingScript.addEventListener('load', resolve, { once: true });
       existingScript.addEventListener('error', reject, { once: true });
       return;
     }
 
     const script = document.createElement('script');
-
     script.src = src;
     script.async = true;
     script.onload = resolve;
@@ -424,7 +435,7 @@ function extractStickerCode(rawText) {
     const prefix = genericMatch[1];
     const number = fixNumberOCR(genericMatch[2]);
 
-    if (!['CODIGO', 'CAMERA', 'SCAN', 'OCR'].includes(prefix)) {
+    if (!['CODIGO', 'CAMERA', 'SCAN', 'OCR', 'FIFAWORLDCUP'].includes(prefix)) {
       return `${prefix}${number}`;
     }
   }
@@ -458,9 +469,7 @@ function useManualCode() {
 function dispatchScannerCode(code) {
   window.dispatchEvent(
     new CustomEvent('scanner:code', {
-      detail: {
-        code,
-      },
+      detail: { code },
     })
   );
 }
