@@ -2,175 +2,460 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-
-    <meta name="theme-color" content="#dff1ff" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Figurinhas Pietro" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <title>Figurinhas Pietro — Copa 2026</title>
+    <meta
+      name="description"
+      content="Controle de figurinhas da Copa 2026 do Pietro com busca, países, figurinhas, troca, scanner e resumo."
+    />
+
+    <meta name="theme-color" content="#061529" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Figurinhas Pietro" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
     <link rel="stylesheet" href="/src/style.css" />
-
-    <script
-      src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
-      defer
-    ></script>
-
-    <script type="module" src="/src/scanner.js"></script>
-    <script type="module" src="/src/app.js"></script>
   </head>
 
   <body>
-    <main class="app-shell">
-      <header class="topbar">
+    <div id="app" class="app-shell">
+      <header class="app-header">
         <div>
-          <p class="eyebrow">Álbum Copa 2026</p>
-          <h1>Controle de Figurinhas</h1>
+          <p class="eyebrow">Copa do Mundo 2026</p>
+          <h1>Figurinhas Pietro</h1>
+          <p class="header-subtitle">
+            Controle completo do álbum: tenho, faltam, repetidas, troca e scanner.
+          </p>
         </div>
 
-        <button id="refreshBtn" class="icon-btn" type="button" aria-label="Atualizar">
+        <button id="syncBtn" class="icon-btn" type="button" aria-label="Sincronizar dados">
           ↻
         </button>
       </header>
 
-      <section class="hero-card">
-        <div class="search-wrap">
-          <input
-            id="searchInput"
-            type="search"
-            placeholder="Buscar ARG4, Brasil, Coca-Cola..."
-            autocomplete="off"
-          />
-        </div>
+      <main class="app-main">
+        <!-- HOME -->
+        <section id="viewHome" class="view active-view" data-view="home">
+          <section class="hero-card">
+            <div class="hero-head">
+              <div>
+                <p class="eyebrow">Home</p>
+                <h2>Pesquisar coleção</h2>
+              </div>
 
-        <div class="quick-actions">
-          <button class="pill active" type="button" data-filter="all">Todas</button>
-          <button class="pill" type="button" data-filter="missing">Faltantes</button>
-          <button class="pill" type="button" data-filter="owned">Tenho</button>
-          <button class="pill" type="button" data-filter="repeated">Repetidas</button>
-          <button class="pill" type="button" data-filter="trade">Troca</button>
-        </div>
+              <button id="clearFiltersBtn" class="ghost-btn compact" type="button">
+                Limpar
+              </button>
+            </div>
 
-        <div class="mode-actions">
-          <button id="scannerBtn" class="primary-btn" type="button">
-            📷 Scanner
-          </button>
+            <div class="filters-grid">
+              <label class="field">
+                <span>Buscar</span>
+                <input
+                  id="searchInput"
+                  list="searchSuggestions"
+                  type="search"
+                  placeholder="Código, país, sigla ou grupo..."
+                  autocomplete="off"
+                />
+                <datalist id="searchSuggestions"></datalist>
+              </label>
 
-          <button id="tradeBtn" class="secondary-btn" type="button">
-            ⭐ Modo Troca
-          </button>
-        </div>
-      </section>
+              <label class="field">
+                <span>Grupo</span>
+                <select id="groupFilter">
+                  <option value="all">Todos os grupos</option>
+                </select>
+              </label>
 
-      <section class="summary-grid">
-        <div class="stat-card">
-          <span>Total</span>
-          <strong id="statTotal">0</strong>
-        </div>
+              <label class="field">
+                <span>Status</span>
+                <select id="statusFilter">
+                  <option value="all">Todos</option>
+                  <option value="missing">Faltantes</option>
+                  <option value="owned">Tenho</option>
+                  <option value="repeated">Repetidas</option>
+                </select>
+              </label>
 
-        <div class="stat-card">
-          <span>Tenho</span>
-          <strong id="statOwned">0</strong>
-        </div>
+              <label class="field">
+                <span>Ordem</span>
+                <select id="sortFilter">
+                  <option value="album">Ordem do álbum</option>
+                  <option value="country">País/Seção</option>
+                  <option value="percent">% completo</option>
+                  <option value="missing">Mais faltantes</option>
+                </select>
+              </label>
+            </div>
+          </section>
 
-        <div class="stat-card">
-          <span>Faltam</span>
-          <strong id="statMissing">0</strong>
-        </div>
+          <section class="summary-grid">
+            <article class="stat-card">
+              <span>Total</span>
+              <strong id="totalCount">0</strong>
+            </article>
 
-        <div class="stat-card">
-          <span>Repetidas</span>
-          <strong id="statRepeated">0</strong>
-        </div>
-      </section>
+            <article class="stat-card">
+              <span>Tenho</span>
+              <strong id="ownedCount">0</strong>
+            </article>
 
-      <section class="progress-card">
-        <div class="progress-head">
-          <h2>Progresso do álbum</h2>
-          <strong id="progressPercent">0%</strong>
-        </div>
+            <article class="stat-card">
+              <span>Faltam</span>
+              <strong id="missingCount">0</strong>
+            </article>
 
-        <p id="progressText">0 de 0 figurinhas</p>
+            <article class="stat-card">
+              <span>Repetidas</span>
+              <strong id="repeatedCount">0</strong>
+            </article>
+          </section>
 
-        <div class="progress-track">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-      </section>
+          <section class="progress-card">
+            <div class="progress-head">
+              <div>
+                <p class="eyebrow">Progresso geral</p>
+                <h2>Álbum completo</h2>
+              </div>
 
-      <section id="tradePanel" class="panel hidden">
-        <div class="panel-head">
-          <div>
-            <h2>Modo Troca</h2>
-            <p>Favorite figurinhas durante a busca e efetive quando a troca acontecer.</p>
-          </div>
+              <strong id="progressPercent">0%</strong>
+            </div>
 
-          <button id="clearTradeBtn" class="ghost-btn" type="button">
-            Limpar
-          </button>
-        </div>
+            <p id="progressText">0 de 0 figurinhas marcadas como tenho.</p>
 
-        <div id="tradeList" class="mini-list"></div>
+            <div class="progress-track" aria-label="Progresso geral">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+          </section>
 
-        <button id="confirmTradeBtn" class="primary-btn full" type="button">
-          Efetivar troca e marcar como Tenho
+          <section class="section-block">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Países e seções</p>
+                <h2>Resultado da busca</h2>
+              </div>
+
+              <span id="homeResultCount" class="result-count">0</span>
+            </div>
+
+            <div id="homeCountriesGrid" class="countries-grid"></div>
+          </section>
+        </section>
+
+        <!-- PAÍSES -->
+        <section id="viewCountries" class="view" data-view="countries">
+          <section class="section-block">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Países</p>
+                <h2>Resultado agrupado</h2>
+              </div>
+
+              <span id="countriesResultCount" class="result-count">0</span>
+            </div>
+
+            <div id="countriesGrid" class="countries-grid"></div>
+          </section>
+        </section>
+
+        <!-- FIGURINHAS -->
+        <section id="viewStickers" class="view" data-view="stickers">
+          <section class="section-block">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Figurinhas</p>
+                <h2>Lista completa</h2>
+              </div>
+
+              <span id="resultCount" class="result-count">0</span>
+            </div>
+
+            <div id="stickersGrid" class="stickers-grid"></div>
+          </section>
+        </section>
+
+        <!-- TROCA -->
+        <section id="viewTrade" class="view" data-view="trade">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Modo troca</p>
+                <h2>Figurinhas selecionadas</h2>
+              </div>
+
+              <span id="tradeCount" class="result-count">0</span>
+            </div>
+
+            <p class="panel-description">
+              Favorite figurinhas durante a pesquisa. Depois, efetive a troca para marcar todas como
+              <strong>✅ Tenho</strong>.
+            </p>
+
+            <div class="mode-actions">
+              <button id="confirmTradeBtn" class="primary-btn" type="button">
+                Efetivar troca
+              </button>
+
+              <button id="clearTradeBtn" class="secondary-btn" type="button">
+                Limpar troca
+              </button>
+            </div>
+          </section>
+
+          <section class="section-block">
+            <div id="tradeList" class="trade-list"></div>
+          </section>
+        </section>
+
+        <!-- SCAN -->
+        <section id="viewScan" class="view" data-view="scan">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Scanner</p>
+                <h2>Ler código da figurinha</h2>
+              </div>
+            </div>
+
+            <p class="panel-description">
+              Use a câmera para tentar ler códigos como <strong>ARG4</strong>, <strong>BRA12</strong>,
+              <strong>FIFA3</strong> ou <strong>CC1</strong>. Se o OCR falhar, digite manualmente.
+            </p>
+
+            <div class="scanner-actions">
+              <button id="scannerBtn" class="primary-btn" type="button">
+                Abrir câmera
+              </button>
+
+              <button id="scanSyncBtn" class="secondary-btn" type="button">
+                Sincronizar
+              </button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="manual-code">
+              <input
+                id="scanManualCodeInput"
+                type="text"
+                placeholder="Digite o código, ex: ARG4"
+                autocomplete="off"
+              />
+
+              <button id="scanManualCodeBtn" class="primary-btn" type="button">
+                Buscar código
+              </button>
+            </div>
+
+            <div id="scannerResultPage" class="scanner-result">
+              Nenhum código pesquisado ainda.
+            </div>
+
+            <div id="scannerResultActions" class="scanner-result-actions hidden">
+              <button id="scanMarkOwnedBtn" class="primary-btn" type="button">
+                Marcar como tenho
+              </button>
+
+              <button id="scanAddTradeBtn" class="secondary-btn" type="button">
+                Favoritar troca
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <!-- RESUMO -->
+        <section id="viewSummary" class="view" data-view="summary">
+          <section class="summary-grid">
+            <article class="stat-card">
+              <span>Total</span>
+              <strong id="summaryTotalCount">0</strong>
+            </article>
+
+            <article class="stat-card">
+              <span>Tenho</span>
+              <strong id="summaryOwnedCount">0</strong>
+            </article>
+
+            <article class="stat-card">
+              <span>Faltam</span>
+              <strong id="summaryMissingCount">0</strong>
+            </article>
+
+            <article class="stat-card">
+              <span>Repetidas</span>
+              <strong id="summaryRepeatedCount">0</strong>
+            </article>
+          </section>
+
+          <section class="progress-card">
+            <div class="progress-head">
+              <div>
+                <p class="eyebrow">Resumo</p>
+                <h2>Progresso completo</h2>
+              </div>
+
+              <strong id="summaryProgressPercent">0%</strong>
+            </div>
+
+            <p id="summaryProgressText">0 de 0 figurinhas marcadas como tenho.</p>
+
+            <div class="progress-track" aria-label="Progresso do resumo">
+              <div id="summaryProgressBar" class="progress-bar"></div>
+            </div>
+          </section>
+
+          <section class="progress-by-group">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Grupos</p>
+                <h2>Progresso por grupo</h2>
+              </div>
+            </div>
+
+            <div id="groupProgress" class="group-progress-list"></div>
+          </section>
+
+          <section class="rankings-grid">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Faltam mais</p>
+                  <h2>Mais faltantes</h2>
+                </div>
+              </div>
+
+              <div id="rankMostMissing" class="mini-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Tenho mais</p>
+                  <h2>Mais completos</h2>
+                </div>
+              </div>
+
+              <div id="rankMostOwned" class="mini-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Finalizados</p>
+                  <h2>Seções completas</h2>
+                </div>
+              </div>
+
+              <div id="rankCompleted" class="mini-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Repetidas</p>
+                  <h2>Top repetidas</h2>
+                </div>
+              </div>
+
+              <div id="rankTopRepeated" class="mini-list"></div>
+            </article>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Ferramentas</p>
+                <h2>Manutenção</h2>
+              </div>
+            </div>
+
+            <div class="tools-grid">
+              <button id="summarySyncBtn" class="primary-btn" type="button">
+                Sincronizar
+              </button>
+
+              <button id="exportCsvBtn" class="secondary-btn" type="button">
+                Exportar CSV
+              </button>
+
+              <button id="clearLocalBtn" class="ghost-btn" type="button">
+                Limpar local
+              </button>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Menu principal">
+        <button class="nav-btn active" type="button" data-nav="home">
+          <span>⌂</span>
+          Home
         </button>
-      </section>
 
-      <section>
-        <div class="section-head">
-          <h2>Figurinhas</h2>
-          <p id="resultCount">Carregando...</p>
-        </div>
+        <button class="nav-btn" type="button" data-nav="countries">
+          <span>🌎</span>
+          Países
+        </button>
 
-        <div id="stickersGrid" class="stickers-grid"></div>
-      </section>
+        <button class="nav-btn" type="button" data-nav="stickers">
+          <span>▣</span>
+          Figurinhas
+        </button>
 
-      <section class="progress-by-group">
-        <div class="section-head">
-          <h2>Progresso por grupo</h2>
-        </div>
+        <button class="nav-btn" type="button" data-nav="trade">
+          <span>★</span>
+          Troca
+        </button>
 
-        <div id="groupProgress"></div>
-      </section>
-    </main>
+        <button class="nav-btn" type="button" data-nav="scan">
+          <span>⌗</span>
+          Scan
+        </button>
 
-    <section id="scannerModal" class="modal hidden" aria-hidden="true">
+        <button class="nav-btn" type="button" data-nav="summary">
+          <span>◴</span>
+          Resumo
+        </button>
+      </nav>
+    </div>
+
+    <!-- MODAL DO SCANNER: mantém compatibilidade com src/scanner.js antigo -->
+    <div id="scannerModal" class="modal hidden" role="dialog" aria-modal="true">
       <div class="modal-card">
         <div class="modal-head">
           <div>
-            <h2>Scanner</h2>
-            <p>Aponte para o código no topo direito da figurinha.</p>
+            <p class="eyebrow">Scanner OCR</p>
+            <h2>Centralize o código</h2>
+            <p>Posicione o código da figurinha no retângulo verde.</p>
           </div>
 
-          <button id="closeScannerBtn" class="icon-btn" type="button" aria-label="Fechar">
+          <button id="stopCameraBtn" class="icon-btn" type="button" aria-label="Fechar câmera">
             ×
           </button>
         </div>
 
         <div class="camera-box">
-          <video id="cameraVideo" autoplay playsinline muted></video>
+          <video id="cameraVideo" autoplay muted playsinline></video>
+          <canvas id="scanCanvas" class="hidden"></canvas>
 
           <div class="scan-frame">
             <span>Código</span>
           </div>
-
-          <canvas id="scanCanvas" class="hidden"></canvas>
         </div>
 
         <div class="scanner-actions">
           <button id="scanNowBtn" class="primary-btn" type="button">
-            Ler código
+            Escanear agora
           </button>
 
-          <button id="stopCameraBtn" class="secondary-btn" type="button">
-            Parar câmera
+          <button id="stopCameraBtnAlt" class="secondary-btn" type="button">
+            Fechar câmera
           </button>
         </div>
 
@@ -178,19 +463,24 @@
           <input
             id="manualCodeInput"
             type="text"
-            placeholder="Digite ARG4, BRA12, CC1..."
+            placeholder="Ou digite o código, ex: ARG4"
             autocomplete="off"
           />
 
-          <button id="manualCodeBtn" class="secondary-btn" type="button">
-            Buscar
+          <button id="manualCodeBtn" class="primary-btn" type="button">
+            Usar código
           </button>
         </div>
 
-        <div id="scannerResult" class="scanner-result"></div>
+        <div id="scannerResult" class="scanner-result">
+          Aguardando leitura...
+        </div>
       </div>
-    </section>
+    </div>
 
     <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="/src/app.js"></script>
+    <script type="module" src="/src/scanner.js"></script>
   </body>
 </html>
