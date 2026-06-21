@@ -1,923 +1,196 @@
-* {
-  box-sizing: border-box;
-}
-
-:root {
-  --bg: #edf7ff;
-  --bg-2: #f7fbff;
-  --card: rgba(255, 255, 255, 0.94);
-  --card-solid: #ffffff;
-  --text: #0b1220;
-  --muted: #667085;
-  --line: rgba(15, 23, 42, 0.10);
-  --line-strong: rgba(15, 23, 42, 0.16);
-
-  --blue: #155eef;
-  --blue-soft: #eaf2ff;
-  --green: #079455;
-  --green-soft: #dcfae6;
-  --red: #d92d20;
-  --red-soft: #fee4e2;
-  --orange: #dc6803;
-  --orange-soft: #fff1cc;
-
-  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --shadow-card: 0 14px 34px rgba(15, 23, 42, 0.08);
-  --shadow-hero: 0 18px 48px rgba(15, 23, 42, 0.10);
-
-  --radius-xl: 28px;
-  --radius-lg: 22px;
-  --radius-md: 16px;
-  --radius-sm: 12px;
-}
-
-html {
-  width: 100%;
-  min-height: 100%;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  width: 100%;
-  min-height: 100vh;
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(21, 94, 239, 0.18), transparent 34%),
-    radial-gradient(circle at 90% 5%, rgba(18, 183, 106, 0.12), transparent 30%),
-    linear-gradient(180deg, #dff1ff 0%, #eef8ff 42%, #f8fbff 100%);
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:active {
-  transform: scale(0.985);
-}
-
-.app-shell {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  padding: 18px;
-  padding-bottom: 90px;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 12px 0 18px;
-}
-
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--blue);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-}
-
-h1,
-h2,
-h3,
-p {
-  margin-top: 0;
-}
-
-h1 {
-  margin-bottom: 0;
-  color: var(--text);
-  font-size: clamp(2rem, 5vw, 3.7rem);
-  line-height: 0.96;
-  letter-spacing: -0.06em;
-  font-weight: 950;
-}
-
-h2 {
-  margin-bottom: 0;
-  color: var(--text);
-  letter-spacing: -0.045em;
-  font-size: clamp(1.35rem, 3vw, 2rem);
-  line-height: 1.05;
-}
-
-.icon-btn {
-  width: 52px;
-  height: 52px;
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--text);
-  font-size: 1.6rem;
-  font-weight: 900;
-  box-shadow: var(--shadow-soft);
-}
-
-.hero-card,
-.progress-card,
-.panel,
-.progress-by-group {
-  border: 1px solid var(--line);
-  background: var(--card);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-hero);
-  padding: 18px;
-  margin-bottom: 16px;
-}
-
-.search-wrap input {
-  width: 100%;
-  border: 1px solid var(--line-strong);
-  border-radius: 20px;
-  background: var(--card-solid);
-  padding: 15px 17px;
-  outline: none;
-  color: var(--text);
-  font-size: 1rem;
-  font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.03);
-}
-
-.search-wrap input::placeholder {
-  color: rgba(102, 112, 133, 0.86);
-  font-weight: 700;
-}
-
-.search-wrap input:focus {
-  border-color: rgba(21, 94, 239, 0.58);
-  box-shadow: 0 0 0 4px rgba(21, 94, 239, 0.10);
-}
-
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  overflow: visible;
-  padding: 14px 0 0;
-}
-
-.pill {
-  min-height: 44px;
-  border: 1px solid var(--line);
-  background: var(--card-solid);
-  border-radius: 999px;
-  padding: 10px 15px;
-  color: var(--muted);
-  font-weight: 850;
-  white-space: nowrap;
-  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.035);
-}
-
-.pill.active {
-  border-color: var(--text);
-  background: var(--text);
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
-}
-
-.mode-actions,
-.scanner-actions,
-.manual-code {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.primary-btn,
-.secondary-btn,
-.ghost-btn {
-  min-height: 48px;
-  border: 0;
-  border-radius: 18px;
-  padding: 12px 16px;
-  font-weight: 950;
-  line-height: 1.05;
-}
-
-.primary-btn {
-  background: var(--text);
-  color: #fff;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
-}
-
-.secondary-btn {
-  background: var(--blue-soft);
-  color: var(--blue);
-}
-
-.ghost-btn {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--muted);
-  border: 1px solid var(--line);
-}
-
-.full {
-  width: 100%;
-  margin-top: 14px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.stat-card {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.96);
-  border-radius: 22px;
-  padding: 16px 17px;
-  box-shadow: var(--shadow-soft);
-}
-
-.stat-card span {
-  display: block;
-  margin-bottom: 3px;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 750;
-}
-
-.stat-card strong {
-  display: block;
-  color: var(--text);
-  font-size: clamp(1.7rem, 5vw, 2.45rem);
-  line-height: 0.95;
-  letter-spacing: -0.06em;
-  font-weight: 950;
-}
-
-.progress-card {
-  padding: 20px;
-}
-
-.progress-head,
-.panel-head,
-.section-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.progress-head p,
-.panel-head p,
-.section-head p {
-  margin-bottom: 0;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-#progressPercent {
-  color: var(--text);
-  font-size: 1.25rem;
-  font-weight: 950;
-}
-
-#progressText {
-  margin: 18px 0 7px;
-  color: var(--muted);
-  font-size: 1rem;
-  font-weight: 750;
-}
-
-.progress-track {
-  height: 13px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-  overflow: hidden;
-}
-
-.progress-bar {
-  width: 0%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ef3e2d 0%, #f59e0b 52%, #22c55e 100%);
-  transition: width 350ms ease;
-}
-
-.section-head {
-  margin: 24px 0 13px;
-}
-
-.section-head h2 {
-  font-size: clamp(1.5rem, 4vw, 2.2rem);
-}
-
-#resultCount {
-  flex: 0 0 auto;
-  color: var(--muted);
-  font-size: 1rem;
-  font-weight: 850;
-}
-
-.stickers-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.sticker-card {
-  position: relative;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 24px;
-  padding: 16px;
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-.sticker-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 5px;
-  background: linear-gradient(90deg, rgba(21, 94, 239, 0.88), rgba(18, 183, 106, 0.78));
-  opacity: 0.18;
-}
-
-.sticker-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.code {
-  display: inline-flex;
-  align-items: center;
-  min-height: 38px;
-  border-radius: 14px;
-  background: #f5f7fb;
-  padding: 7px 12px;
-  color: var(--text);
-  font-weight: 950;
-  letter-spacing: 0.035em;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.035);
-}
-
-.flag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #f8fafc;
-  font-size: 1.5rem;
-}
-
-.sticker-card h3 {
-  margin: 0 0 4px;
-  color: var(--text);
-  font-size: 1.04rem;
-  line-height: 1.16;
-  letter-spacing: -0.035em;
-  font-weight: 950;
-}
-
-.meta {
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 14px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 0.78rem;
-  font-weight: 950;
-  line-height: 1;
-}
-
-.badge.owned {
-  background: var(--green-soft);
-  color: #067647;
-}
-
-.badge.missing {
-  background: var(--red-soft);
-  color: #b42318;
-}
-
-.badge.repeat {
-  background: var(--orange-soft);
-  color: #93370d;
-}
-
-.card-actions {
-  display: grid;
-  grid-template-columns: 1fr 50px;
-  gap: 10px;
-  align-items: center;
-}
-
-.card-actions .own-btn {
-  min-height: 50px;
-  border: 0;
-  border-radius: 17px;
-  padding: 12px 14px;
-  background: var(--text);
-  color: #fff;
-  font-weight: 950;
-  line-height: 1.05;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.13);
-}
-
-.card-actions .trade-fav-btn {
-  min-height: 50px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  padding: 10px;
-  background: #fff;
-  color: var(--text);
-  font-size: 1.2rem;
-  font-weight: 950;
-  box-shadow: 0 7px 16px rgba(15, 23, 42, 0.045);
-}
-
-.repeat-control {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 46px 1fr 46px;
-  gap: 9px;
-  align-items: center;
-  margin-top: 2px;
-}
-
-.repeat-control button {
-  height: 46px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: #f8fafc;
-  color: var(--text);
-  font-size: 1.4rem;
-  font-weight: 950;
-  line-height: 1;
-}
-
-.repeat-control span {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.94rem;
-  font-weight: 900;
-}
-
-.panel {
-  padding: 17px;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.mini-list {
-  display: grid;
-  gap: 9px;
-  margin-top: 13px;
-}
-
-.mini-item,
-.group-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid var(--line);
-  background: #fff;
-  border-radius: 18px;
-  padding: 12px;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.035);
-}
-
-.group-row {
-  margin-bottom: 10px;
-}
-
-.group-row strong {
-  font-weight: 950;
-}
-
-.group-row span {
-  color: var(--muted);
-  font-weight: 900;
-}
-
-.group-progress-track {
-  grid-column: 1 / -1;
-  height: 9px;
-  border-radius: 999px;
-  background: #edf2f7;
-  overflow: hidden;
-}
-
-.group-progress-bar {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ef3e2d 0%, #f59e0b 52%, #22c55e 100%);
-  transition: width 350ms ease;
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(15, 23, 42, 0.58);
-  padding: 16px;
-  display: grid;
-  place-items: center;
-}
-
-.modal-card {
-  width: min(620px, 100%);
-  max-height: calc(100vh - 32px);
-  overflow: auto;
-  background: #fff;
-  border-radius: 28px;
-  padding: 17px;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-}
-
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.modal-head p {
-  margin-bottom: 0;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.camera-box {
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  background: #101828;
-  aspect-ratio: 3 / 4;
-}
-
-.camera-box video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.scan-frame {
-  position: absolute;
-  right: 8%;
-  top: 8%;
-  width: 42%;
-  height: 16%;
-  border: 3px solid #22c55e;
-  border-radius: 16px;
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.20);
-}
-
-.scan-frame span {
-  position: absolute;
-  left: 8px;
-  top: -28px;
-  color: #fff;
-  font-weight: 950;
-}
-
-.manual-code input {
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 13px 14px;
-  text-transform: uppercase;
-  outline: none;
-  font-weight: 850;
-}
-
-.scanner-result {
-  margin-top: 12px;
-  border-radius: 18px;
-  background: #f8fafc;
-  padding: 14px;
-  min-height: 52px;
-  color: var(--text);
-  font-weight: 750;
-}
-
-.scanner-result-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-top: 12px;
-}
-
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  z-index: 80;
-  max-width: calc(100% - 28px);
-  background: var(--text);
-  color: #fff;
-  padding: 13px 16px;
-  border-radius: 999px;
-  font-weight: 900;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.24);
-  text-align: center;
-}
-
-/* TABLET */
-@media (max-width: 980px) {
-  .stickers-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* MOBILE */
-@media (max-width: 640px) {
-  .app-shell {
-    padding: 14px;
-    padding-bottom: 92px;
-  }
-
-  .topbar {
-    align-items: flex-start;
-    margin: 10px 0 16px;
-  }
-
-  .eyebrow {
-    font-size: 0.72rem;
-  }
-
-  h1 {
-    font-size: 2.05rem;
-    line-height: 0.98;
-    letter-spacing: -0.065em;
-  }
-
-  .icon-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 17px;
-    font-size: 1.45rem;
-  }
-
-  .hero-card,
-  .progress-card,
-  .panel,
-  .progress-by-group {
-    border-radius: 26px;
-    padding: 15px;
-    margin-bottom: 14px;
-  }
-
-  .search-wrap input {
-    min-height: 54px;
-    border-radius: 19px;
-    padding: 14px 15px;
-    font-size: 0.96rem;
-  }
-
-  .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding-top: 12px;
-  }
-
-  .pill {
-    width: 100%;
-    min-height: 42px;
-    padding: 9px 8px;
-    text-align: center;
-    font-size: 0.9rem;
-  }
-
-  .mode-actions {
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
-    margin-top: 12px;
-  }
-
-  .primary-btn,
-  .secondary-btn,
-  .ghost-btn {
-    min-height: 48px;
-    border-radius: 17px;
-    padding: 11px 12px;
-    font-size: 0.95rem;
-  }
-
-  .summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .stat-card {
-    min-height: 96px;
-    border-radius: 22px;
-    padding: 14px;
-  }
-
-  .stat-card span {
-    font-size: 0.9rem;
-  }
-
-  .stat-card strong {
-    font-size: 2rem;
-  }
-
-  .progress-card {
-    padding: 17px;
-  }
-
-  .progress-head,
-  .panel-head,
-  .section-head {
-    align-items: flex-start;
-  }
-
-  .progress-head h2 {
-    max-width: 70%;
-  }
-
-  #progressPercent {
-    font-size: 1.15rem;
-  }
-
-  #progressText {
-    margin-top: 16px;
-    font-size: 0.98rem;
-  }
-
-  .section-head {
-    margin: 22px 0 12px;
-  }
-
-  .section-head h2 {
-    font-size: 1.7rem;
-  }
-
-  #resultCount {
-    font-size: 0.95rem;
-    text-align: right;
-  }
-
-  .stickers-grid {
-    grid-template-columns: 1fr;
-    gap: 13px;
-  }
-
-  .sticker-card {
-    border-radius: 24px;
-    padding: 15px;
-  }
-
-  .sticker-top {
-    margin-bottom: 11px;
-  }
-
-  .code {
-    min-height: 36px;
-    border-radius: 13px;
-    padding: 7px 11px;
-    font-size: 0.96rem;
-  }
-
-  .flag {
-    width: 36px;
-    height: 36px;
-    font-size: 1.38rem;
-  }
-
-  .sticker-card h3 {
-    font-size: 1.02rem;
-  }
-
-  .meta {
-    margin-bottom: 11px;
-    font-size: 0.9rem;
-  }
-
-  .badges {
-    margin-bottom: 13px;
-  }
-
-  .card-actions {
-    grid-template-columns: 1fr 48px;
-    gap: 9px;
-  }
-
-  .card-actions .own-btn,
-  .card-actions .trade-fav-btn {
-    min-height: 48px;
-    border-radius: 16px;
-  }
-
-  .repeat-control {
-    grid-template-columns: 44px 1fr 44px;
-    gap: 8px;
-  }
-
-  .repeat-control button {
-    height: 44px;
-    border-radius: 15px;
-  }
-
-  .repeat-control span {
-    font-size: 0.9rem;
-  }
-
-  .mini-item,
-  .group-row {
-    border-radius: 17px;
-    padding: 11px;
-  }
-
-  .modal {
-    padding: 12px;
-    align-items: end;
-  }
-
-  .modal-card {
-    max-height: calc(100vh - 24px);
-    border-radius: 26px;
-    padding: 15px;
-  }
-
-  .scanner-actions,
-  .manual-code,
-  .scanner-result-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .camera-box {
-    aspect-ratio: 3 / 4;
-  }
-}
-
-/* IPHONE PEQUENO */
-@media (max-width: 390px) {
-  .app-shell {
-    padding: 12px;
-    padding-bottom: 90px;
-  }
-
-  h1 {
-    font-size: 1.9rem;
-  }
-
-  .quick-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mode-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    min-height: 88px;
-  }
-
-  .stat-card strong {
-    font-size: 1.8rem;
-  }
-
-  .progress-head h2 {
-    max-width: 68%;
-  }
-}
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <meta name="theme-color" content="#dff1ff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Figurinhas Pietro" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <title>Figurinhas Pietro — Copa 2026</title>
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/src/style.css" />
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+      defer
+    ></script>
+
+    <script type="module" src="/src/scanner.js"></script>
+    <script type="module" src="/src/app.js"></script>
+  </head>
+
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Álbum Copa 2026</p>
+          <h1>Controle de Figurinhas</h1>
+        </div>
+
+        <button id="refreshBtn" class="icon-btn" type="button" aria-label="Atualizar">
+          ↻
+        </button>
+      </header>
+
+      <section class="hero-card">
+        <div class="search-wrap">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Buscar ARG4, Brasil, Coca-Cola..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="quick-actions">
+          <button class="pill active" type="button" data-filter="all">Todas</button>
+          <button class="pill" type="button" data-filter="missing">Faltantes</button>
+          <button class="pill" type="button" data-filter="owned">Tenho</button>
+          <button class="pill" type="button" data-filter="repeated">Repetidas</button>
+          <button class="pill" type="button" data-filter="trade">Troca</button>
+        </div>
+
+        <div class="mode-actions">
+          <button id="scannerBtn" class="primary-btn" type="button">
+            📷 Scanner
+          </button>
+
+          <button id="tradeBtn" class="secondary-btn" type="button">
+            ⭐ Modo Troca
+          </button>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <div class="stat-card">
+          <span>Total</span>
+          <strong id="statTotal">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>Tenho</span>
+          <strong id="statOwned">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>Faltam</span>
+          <strong id="statMissing">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>Repetidas</span>
+          <strong id="statRepeated">0</strong>
+        </div>
+      </section>
+
+      <section class="progress-card">
+        <div class="progress-head">
+          <h2>Progresso do álbum</h2>
+          <strong id="progressPercent">0%</strong>
+        </div>
+
+        <p id="progressText">0 de 0 figurinhas</p>
+
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section id="tradePanel" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h2>Modo Troca</h2>
+            <p>Favorite figurinhas durante a busca e efetive quando a troca acontecer.</p>
+          </div>
+
+          <button id="clearTradeBtn" class="ghost-btn" type="button">
+            Limpar
+          </button>
+        </div>
+
+        <div id="tradeList" class="mini-list"></div>
+
+        <button id="confirmTradeBtn" class="primary-btn full" type="button">
+          Efetivar troca e marcar como Tenho
+        </button>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <h2>Figurinhas</h2>
+          <p id="resultCount">Carregando...</p>
+        </div>
+
+        <div id="stickersGrid" class="stickers-grid"></div>
+      </section>
+
+      <section class="progress-by-group">
+        <div class="section-head">
+          <h2>Progresso por grupo</h2>
+        </div>
+
+        <div id="groupProgress"></div>
+      </section>
+    </main>
+
+    <section id="scannerModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <h2>Scanner</h2>
+            <p>Aponte para o código no topo direito da figurinha.</p>
+          </div>
+
+          <button id="closeScannerBtn" class="icon-btn" type="button" aria-label="Fechar">
+            ×
+          </button>
+        </div>
+
+        <div class="camera-box">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+
+          <div class="scan-frame">
+            <span>Código</span>
+          </div>
+
+          <canvas id="scanCanvas" class="hidden"></canvas>
+        </div>
+
+        <div class="scanner-actions">
+          <button id="scanNowBtn" class="primary-btn" type="button">
+            Ler código
+          </button>
+
+          <button id="stopCameraBtn" class="secondary-btn" type="button">
+            Parar câmera
+          </button>
+        </div>
+
+        <div class="manual-code">
+          <input
+            id="manualCodeInput"
+            type="text"
+            placeholder="Digite ARG4, BRA12, CC1..."
+            autocomplete="off"
+          />
+
+          <button id="manualCodeBtn" class="secondary-btn" type="button">
+            Buscar
+          </button>
+        </div>
+
+        <div id="scannerResult" class="scanner-result"></div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast hidden"></div>
+  </body>
+</html>
