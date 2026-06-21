@@ -99,4 +99,5 @@ O scanner usa câmera + OCR via Tesseract.js no navegador.
 Como o código da figurinha é texto impresso, tipo `ARG4`, `BRA12`, `FIFA3` ou `CC1`, ele não é QR Code.
 
 O app tenta reconhecer o texto pela câmera, mas também tem campo manual caso o OCR não leia direito.
+
 deploy final
