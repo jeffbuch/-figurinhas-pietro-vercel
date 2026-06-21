@@ -4,9 +4,12 @@
   "private": true,
   "description": "PWA para controle de figurinhas da Copa 2026 usando Google Sheets como banco de dados.",
   "scripts": {
-    "build": "rm -rf dist && mkdir -p dist && cp -R index.html src public dist/"
+    "build": "vite",
+    "dev": "vite"
   },
   "dependencies": {
+    "@vitejs/plugin-legacy": "^5.4.2",
+    "vite": "^5.4.11",
     "googleapis": "^144.0.0"
   }
 }
