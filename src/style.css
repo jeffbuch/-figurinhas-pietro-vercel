@@ -1094,3 +1094,57 @@ button:disabled {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* =========================================================
+   Ajuste: botões - / + de Repetidas dentro dos cards em 2 colunas
+   Evita que o botão + saia para fora do card no celular.
+   ========================================================= */
+@media (max-width: 639px) {
+  .stickers-grid .sticker-card {
+    overflow: hidden;
+  }
+
+  .stickers-grid .repeat-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 7px;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .stickers-grid .repeat-control span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: -0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stickers-grid .repeat-control div {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .stickers-grid .repeat-control button {
+    width: 26px;
+    min-width: 26px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .stickers-grid .repeat-control strong {
+    min-width: 14px;
+    font-size: 16px;
+    line-height: 1;
+  }
+}
