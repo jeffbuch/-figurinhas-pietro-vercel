@@ -3,7 +3,8 @@ const OCR_SCRIPT_URLS = [
   'https://unpkg.com/tesseract.js@4.1.4/dist/tesseract.min.js',
 ];
 
-const AUTO_SCAN_INTERVAL = 1400;
+const AUTO_SCAN_INTERVAL = 1200;
+const CANDIDATE_CONFIRM_HITS = 2;
 
 const VALID_PREFIXES = [
   'FIFA',
@@ -33,8 +34,8 @@ const VALID_PREFIXES = [
   'SEN',
   'GHA',
   'NGR',
-  'UZB',
   'RSA',
+  'UZB',
   'CC',
 ];
 
@@ -46,6 +47,7 @@ const scannerState = {
   isScanning: false,
   isOpen: false,
   foundCode: false,
+  candidateVotes: new Map(),
 };
 
 document.addEventListener('DOMContentLoaded', initScanner);
@@ -91,6 +93,7 @@ async function openScanner() {
 
   scannerState.isOpen = true;
   scannerState.foundCode = false;
+  scannerState.candidateVotes.clear();
 
   modal.classList.remove('hidden');
   showScannerResult('Abrindo câmera...');
@@ -118,7 +121,12 @@ async function openScanner() {
     await waitForVideo(video);
     await video.play();
 
-    showScannerResult('Enquadre a figurinha inteira no guia branco. O sistema vai ler só a caixa do código no canto superior direito.');
+    await tuneCameraTrack();
+
+    showScannerResult(
+      'Enquadre a figurinha inteira no guia. O sistema vai ler só a caixa do código.'
+    );
+
     startAutoScan();
   } catch (error) {
     console.error(error);
@@ -126,9 +134,39 @@ async function openScanner() {
   }
 }
 
+async function tuneCameraTrack() {
+  try {
+    if (!scannerState.stream) return;
+
+    const [track] = scannerState.stream.getVideoTracks();
+    if (!track) return;
+
+    const capabilities = track.getCapabilities?.() || {};
+    const advanced = [];
+
+    if (Array.isArray(capabilities.focusMode) && capabilities.focusMode.includes('continuous')) {
+      advanced.push({ focusMode: 'continuous' });
+    }
+
+    if (capabilities.zoom) {
+      const minZoom = capabilities.zoom.min ?? 1;
+      const maxZoom = capabilities.zoom.max ?? 1;
+      const wantedZoom = Math.min(maxZoom, Math.max(minZoom, 1.35));
+      advanced.push({ zoom: wantedZoom });
+    }
+
+    if (advanced.length) {
+      await track.applyConstraints({ advanced });
+    }
+  } catch (error) {
+    console.warn('Não foi possível ajustar foco/zoom automaticamente.', error);
+  }
+}
+
 function closeScanner() {
   scannerState.isOpen = false;
   scannerState.foundCode = false;
+  scannerState.candidateVotes.clear();
 
   stopAutoScan();
   stopStreamOnly();
@@ -179,7 +217,9 @@ async function scanOnce({ manual = false } = {}) {
   if (scannerState.foundCode) return;
 
   if (scannerState.isScanning) {
-    if (manual) showScannerResult('Já estou tentando reconhecer o código...');
+    if (manual) {
+      showScannerResult('Já estou tentando reconhecer o código...');
+    }
     return;
   }
 
@@ -196,23 +236,27 @@ async function scanOnce({ manual = false } = {}) {
     showScannerResult(
       manual
         ? 'Escaneando agora...'
-        : 'Procurando código automaticamente... mantenha a figurinha no guia.'
+        : 'Procurando código automaticamente... mantenha a figurinha dentro do guia.'
     );
 
-    const croppedCanvas = captureCodeAreaOnly();
-    const preparedCanvas = prepareForOCR(croppedCanvas);
-    const text = await recognizeText(preparedCanvas);
+    const cropCanvas = captureCodeAreaOnly();
+    const result = await recognizeCodeFromCanvas(cropCanvas);
 
     if (!scannerState.isOpen) return;
 
-    const code = extractStickerCode(text);
+    if (result.code) {
+      const confirmed = registerCandidate(result.code, manual);
 
-    if (code) {
+      if (!confirmed) {
+        showScannerResult(`Possível código: ${result.code}. Confirmando...`);
+        return;
+      }
+
       scannerState.foundCode = true;
       stopAutoScan();
 
-      showScannerResult(`Código reconhecido: ${code}`);
-      dispatchScannerCode(code);
+      showScannerResult(`Código reconhecido: ${result.code}`);
+      dispatchScannerCode(result.code);
 
       if (navigator.vibrate) {
         navigator.vibrate(120);
@@ -227,8 +271,8 @@ async function scanOnce({ manual = false } = {}) {
 
     showScannerResult(
       manual
-        ? 'Não consegui ler o código. Tente alinhar a figurinha ou digite manualmente.'
-        : 'Ainda procurando... deixe a figurinha inteira no guia e o código dentro da caixa verde.'
+        ? 'Não consegui ler. Tente alinhar melhor a caixa do código ou digite manualmente.'
+        : 'Ainda procurando... deixe a figurinha inteira no guia e a caixa do código no quadro verde.'
     );
   } catch (error) {
     console.error(error);
@@ -243,6 +287,28 @@ async function scanOnce({ manual = false } = {}) {
   }
 }
 
+function registerCandidate(code, manual = false) {
+  const normalized = normalizeCode(code);
+  if (!normalized) return false;
+
+  if (manual) return true;
+
+  const now = Date.now();
+
+  for (const [key, value] of scannerState.candidateVotes.entries()) {
+    if (now - value.lastSeen > 5000) {
+      scannerState.candidateVotes.delete(key);
+    }
+  }
+
+  const entry = scannerState.candidateVotes.get(normalized) || { hits: 0, lastSeen: now };
+  entry.hits += 1;
+  entry.lastSeen = now;
+  scannerState.candidateVotes.set(normalized, entry);
+
+  return entry.hits >= CANDIDATE_CONFIRM_HITS;
+}
+
 function captureCodeAreaOnly() {
   const video = getEl('cameraVideo');
   const codeFrame = document.querySelector('.scan-frame');
@@ -251,8 +317,8 @@ function captureCodeAreaOnly() {
   const sourceHeight = video.videoHeight;
 
   let sx = sourceWidth * 0.58;
-  let sy = sourceHeight * 0.20;
-  let sw = sourceWidth * 0.20;
+  let sy = sourceHeight * 0.26;
+  let sw = sourceWidth * 0.18;
   let sh = sourceHeight * 0.08;
 
   if (codeFrame) {
@@ -277,8 +343,8 @@ function captureCodeAreaOnly() {
   sw = clamp(sw, 1, sourceWidth - sx);
   sh = clamp(sh, 1, sourceHeight - sy);
 
-  const paddingX = sw * 0.08;
-  const paddingY = sh * 0.18;
+  const paddingX = sw * 0.10;
+  const paddingY = sh * 0.20;
 
   sx = clamp(sx - paddingX, 0, sourceWidth - 1);
   sy = clamp(sy - paddingY, 0, sourceHeight - 1);
@@ -295,12 +361,51 @@ function captureCodeAreaOnly() {
   return canvas;
 }
 
-function prepareForOCR(sourceCanvas) {
-  const upscale = 3;
+async function recognizeCodeFromCanvas(sourceCanvas) {
+  const variants = buildOCRVariants(sourceCanvas);
+  const texts = [];
+
+  for (const variant of variants) {
+    const textPsm7 = await recognizeCanvasText(variant, 7);
+    texts.push(textPsm7);
+
+    let code = extractStickerCode(textPsm7);
+    if (code) return { code, texts };
+
+    const textPsm8 = await recognizeCanvasText(variant, 8);
+    texts.push(textPsm8);
+
+    code = extractStickerCode(textPsm8);
+    if (code) return { code, texts };
+  }
+
+  const merged = texts.join(' ');
+  return {
+    code: extractStickerCode(merged),
+    texts,
+  };
+}
+
+function buildOCRVariants(sourceCanvas) {
+  return [
+    prepareCanvasVariant(sourceCanvas, { scale: 3, threshold: null, contrast: 1.8, sharpen: true }),
+    prepareCanvasVariant(sourceCanvas, { scale: 3, threshold: 140, contrast: 2.0, sharpen: true }),
+    prepareCanvasVariant(sourceCanvas, { scale: 3, threshold: 165, contrast: 2.2, sharpen: true }),
+    prepareCanvasVariant(sourceCanvas, { scale: 4, threshold: 150, contrast: 2.0, sharpen: false }),
+  ];
+}
+
+function prepareCanvasVariant(sourceCanvas, options = {}) {
+  const {
+    scale = 3,
+    threshold = null,
+    contrast = 2,
+    sharpen = false,
+  } = options;
 
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(sourceCanvas.width * upscale));
-  canvas.height = Math.max(1, Math.round(sourceCanvas.height * upscale));
+  canvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+  canvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
 
   const context = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -308,8 +413,8 @@ function prepareForOCR(sourceCanvas) {
   context.imageSmoothingQuality = 'high';
   context.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
+  let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  let data = imageData.data;
 
   for (let index = 0; index < data.length; index += 4) {
     const red = data[index];
@@ -317,23 +422,75 @@ function prepareForOCR(sourceCanvas) {
     const blue = data[index + 2];
 
     let gray = red * 0.299 + green * 0.587 + blue * 0.114;
-    gray = (gray - 128) * 2.1 + 128;
+    gray = (gray - 128) * contrast + 128;
     gray = clamp(gray, 0, 255);
 
-    const binary = gray > 145 ? 255 : 0;
+    if (threshold !== null) {
+      gray = gray > threshold ? 255 : 0;
+    }
 
-    data[index] = binary;
-    data[index + 1] = binary;
-    data[index + 2] = binary;
+    data[index] = gray;
+    data[index + 1] = gray;
+    data[index + 2] = gray;
   }
 
   context.putImageData(imageData, 0, 0);
 
+  if (sharpen) {
+    applySharpen(context, canvas.width, canvas.height);
+  }
+
   return canvas;
 }
 
-async function recognizeText(canvas) {
+function applySharpen(context, width, height) {
+  const src = context.getImageData(0, 0, width, height);
+  const dst = context.createImageData(width, height);
+
+  const srcData = src.data;
+  const dstData = dst.data;
+
+  const weights = [
+    0, -1, 0,
+    -1, 5, -1,
+    0, -1, 0,
+  ];
+
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      for (let channel = 0; channel < 3; channel += 1) {
+        let value = 0;
+        let weightIndex = 0;
+
+        for (let ky = -1; ky <= 1; ky += 1) {
+          for (let kx = -1; kx <= 1; kx += 1) {
+            const pixelIndex = ((y + ky) * width + (x + kx)) * 4 + channel;
+            value += srcData[pixelIndex] * weights[weightIndex];
+            weightIndex += 1;
+          }
+        }
+
+        const outIndex = (y * width + x) * 4 + channel;
+        dstData[outIndex] = clamp(value, 0, 255);
+      }
+
+      const alphaIndex = (y * width + x) * 4 + 3;
+      dstData[alphaIndex] = 255;
+    }
+  }
+
+  context.putImageData(dst, 0, 0);
+}
+
+async function recognizeCanvasText(canvas, psmMode = 7) {
   const worker = await getOCRWorker();
+
+  await worker.setParameters({
+    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+    tessedit_pageseg_mode: String(psmMode),
+    preserve_interword_spaces: '0',
+  });
+
   const result = await worker.recognize(canvas);
   return result?.data?.text || '';
 }
@@ -358,12 +515,6 @@ async function getOCRWorker() {
   await worker.load();
   await worker.loadLanguage('eng');
   await worker.initialize('eng');
-
-  await worker.setParameters({
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode: '7',
-    preserve_interword_spaces: '0',
-  });
 
   scannerState.worker = worker;
   scannerState.workerReady = true;
@@ -414,28 +565,31 @@ function injectScript(src) {
 function extractStickerCode(rawText) {
   const original = String(rawText || '').toUpperCase();
 
-  const compact = original
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Z0-9]/g, '');
+  const cleaned = original
+    .replace(/\n/g, ' ')
+    .replace(/[^A-Z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const compact = cleaned.replace(/\s+/g, '');
 
   const sortedPrefixes = [...VALID_PREFIXES].sort((a, b) => b.length - a.length);
 
   for (const prefix of sortedPrefixes) {
-    const match = compact.match(new RegExp(`${prefix}([0-9]{1,3})`));
+    const regex = new RegExp(`${prefix}\\s*([0-9OILSB]{1,3})`);
+    const matchSpaced = cleaned.match(regex);
+    if (matchSpaced) {
+      return `${prefix}${fixNumberOCR(matchSpaced[1])}`;
+    }
 
-    if (match) {
-      return `${prefix}${fixNumberOCR(match[1])}`;
+    const regexCompact = new RegExp(`${prefix}([0-9OILSB]{1,3})`);
+    const matchCompact = compact.match(regexCompact);
+    if (matchCompact) {
+      return `${prefix}${fixNumberOCR(matchCompact[1])}`;
     }
   }
 
-  const spaced = original
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Z0-9]+/g, ' ')
-    .trim();
-
-  const genericMatch = spaced.match(/\b([A-Z]{2,5})\s*([0-9]{1,3})\b/);
+  const genericMatch = cleaned.match(/\b([A-Z]{2,5})\s*([0-9OILSB]{1,3})\b/);
 
   if (genericMatch) {
     const prefix = genericMatch[1];
@@ -447,10 +601,10 @@ function extractStickerCode(rawText) {
         'CAMERA',
         'SCAN',
         'OCR',
-        'FIFA',
         'WORLD',
         'CUP',
         'PANINI',
+        'FIFA',
       ].includes(prefix)
     ) {
       return `${prefix}${number}`;
