@@ -95,45 +95,6 @@
             </div>
           </section>
 
-          <section class="summary-grid">
-            <article class="stat-card">
-              <span>Total</span>
-              <strong id="totalCount">0</strong>
-            </article>
-
-            <article class="stat-card">
-              <span>Tenho</span>
-              <strong id="ownedCount">0</strong>
-            </article>
-
-            <article class="stat-card">
-              <span>Faltam</span>
-              <strong id="missingCount">0</strong>
-            </article>
-
-            <article class="stat-card">
-              <span>Repetidas</span>
-              <strong id="repeatedCount">0</strong>
-            </article>
-          </section>
-
-          <section class="progress-card">
-            <div class="progress-head">
-              <div>
-                <p class="eyebrow">Progresso geral</p>
-                <h2>Álbum completo</h2>
-              </div>
-
-              <strong id="progressPercent">0%</strong>
-            </div>
-
-            <p id="progressText">0 de 0 figurinhas marcadas como tenho.</p>
-
-            <div class="progress-track" aria-label="Progresso geral">
-              <div id="progressBar" class="progress-bar"></div>
-            </div>
-          </section>
-
           <section class="section-block">
             <div class="section-head">
               <div>
@@ -225,7 +186,7 @@
 
             <p class="panel-description">
               Use a câmera para tentar ler códigos como <strong>ARG4</strong>, <strong>BRA12</strong>,
-              <strong>FIFA3</strong> ou <strong>CC1</strong>. Se o OCR falhar, digite manualmente.
+              <strong>FIFA3</strong>, <strong>RSA8</strong> ou <strong>CC1</strong>.
             </p>
 
             <div class="scanner-actions">
@@ -272,24 +233,24 @@
         <!-- RESUMO -->
         <section id="viewSummary" class="view" data-view="summary">
           <section class="summary-grid">
-            <article class="stat-card">
+            <article class="stat-card stat-total">
               <span>Total</span>
               <strong id="summaryTotalCount">0</strong>
             </article>
 
-            <article class="stat-card">
+            <article class="stat-card stat-repeated">
+              <span>Repetidas</span>
+              <strong id="summaryRepeatedCount">0</strong>
+            </article>
+
+            <article class="stat-card stat-owned">
               <span>Tenho</span>
               <strong id="summaryOwnedCount">0</strong>
             </article>
 
-            <article class="stat-card">
+            <article class="stat-card stat-missing">
               <span>Faltam</span>
               <strong id="summaryMissingCount">0</strong>
-            </article>
-
-            <article class="stat-card">
-              <span>Repetidas</span>
-              <strong id="summaryRepeatedCount">0</strong>
             </article>
           </section>
 
@@ -425,7 +386,7 @@
       </nav>
     </div>
 
-    <!-- MODAL DO SCANNER: mantém compatibilidade com src/scanner.js antigo -->
+    <!-- MODAL DO SCANNER -->
     <div id="scannerModal" class="modal hidden" role="dialog" aria-modal="true">
       <div class="modal-card">
         <div class="modal-head">
