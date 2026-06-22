@@ -1150,42 +1150,26 @@ button:disabled {
 }
 
 /* =========================================================
-   Ajuste: barra de scroll mais grossa e visível
-   Funciona principalmente em Chrome/Edge/desktop/Android.
-   No iPhone/Safari a barra nativa pode ignorar parte do estilo.
+   Ajuste: esconder a barra nativa e usar só a barra lateral touch
+   Evita aparecerem duas barras de scroll na tela.
    ========================================================= */
 html {
-  scrollbar-width: auto;
-  scrollbar-color: rgba(95, 176, 255, 0.9) rgba(255, 255, 255, 0.08);
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 body {
-  overflow-y: scroll;
-}
-
-::-webkit-scrollbar {
-  width: 16px;
-  height: 16px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(4, 13, 27, 0.92);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-::-webkit-scrollbar-thumb {
-  min-height: 72px;
-  border: 4px solid rgba(4, 13, 27, 0.92);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(95, 176, 255, 0.96), rgba(47, 140, 255, 0.96));
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(124, 195, 255, 1), rgba(77, 158, 255, 1));
-}
-
-::-webkit-scrollbar-corner {
-  background: rgba(4, 13, 27, 0.92);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* =========================================================
@@ -1194,11 +1178,11 @@ body {
    ========================================================= */
 .scroll-assist {
   position: fixed;
-  top: calc(82px + var(--safe-top));
+  top: calc(118px + var(--safe-top));
   right: 0;
-  bottom: calc(104px + var(--safe-bottom));
+  bottom: calc(112px + var(--safe-bottom));
   z-index: 90;
-  width: 40px;
+  width: 46px;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
@@ -1208,55 +1192,43 @@ body {
 .scroll-assist-track {
   position: absolute;
   top: 0;
-  right: 5px;
+  right: 0;
   bottom: 0;
-  width: 9px;
+  width: 46px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  opacity: 0.48;
+  background: transparent;
+  opacity: 0.78;
   pointer-events: auto;
   touch-action: none;
-  transition:
-    width 160ms ease,
-    right 160ms ease,
-    opacity 160ms ease,
-    background 160ms ease,
-    box-shadow 160ms ease;
 }
 
 .scroll-assist-thumb {
   position: absolute;
   top: 0;
-  right: 0;
-  left: 0;
+  right: 5px;
+  width: 8px;
   min-height: 72px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(95, 176, 255, 0.96), rgba(47, 140, 255, 0.96));
+  background: rgba(95, 176, 255, 0.72);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 8px 24px rgba(47, 140, 255, 0.24);
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 8px 24px rgba(47, 140, 255, 0.18);
   transition:
+    width 160ms ease,
+    right 160ms ease,
     background 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.scroll-assist.is-active .scroll-assist-track,
-.scroll-assist.is-dragging .scroll-assist-track {
-  right: 4px;
-  width: 30px;
-  background: rgba(47, 140, 255, 0.15);
-  opacity: 1;
-  box-shadow:
-    inset 0 0 0 1px rgba(95, 176, 255, 0.28),
-    0 0 22px rgba(47, 140, 255, 0.18);
+    box-shadow 160ms ease,
+    opacity 160ms ease;
 }
 
 .scroll-assist.is-active .scroll-assist-thumb,
 .scroll-assist.is-dragging .scroll-assist-thumb {
+  right: 4px;
+  width: 28px;
   background: linear-gradient(180deg, rgba(124, 195, 255, 1), rgba(47, 140, 255, 1));
   box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.2),
-    0 10px 30px rgba(47, 140, 255, 0.38);
+    inset 0 0 0 2px rgba(255, 255, 255, 0.18),
+    0 10px 30px rgba(47, 140, 255, 0.34);
 }
 
 .scroll-assist.hidden {
