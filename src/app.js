@@ -14,6 +14,7 @@ const state = {
   trade: new Set(),
   selectedScanCode: null,
   loading: false,
+  wakeLock: null,
 };
 
 const viewMap = {
@@ -53,6 +54,7 @@ const countryFlags = {
   GHA: '🇬🇭',
   NGR: '🇳🇬',
   FIFA: '🏆',
+  FWC: '🏆',
   CC: '🥤',
 };
 
@@ -60,8 +62,35 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
   loadTradeFromStorage();
+  setupWakeLock();
   bindEvents();
   fetchData();
+}
+
+function setupWakeLock() {
+  requestWakeLock();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
+  });
+}
+
+async function requestWakeLock() {
+  try {
+    if (!('wakeLock' in navigator)) return;
+    if (document.visibilityState !== 'visible') return;
+    if (state.wakeLock) return;
+
+    state.wakeLock = await navigator.wakeLock.request('screen');
+
+    state.wakeLock.addEventListener('release', () => {
+      state.wakeLock = null;
+    });
+  } catch (error) {
+    console.warn('Wake Lock não disponível neste navegador/sistema.', error);
+  }
 }
 
 function bindEvents() {
@@ -136,17 +165,21 @@ function bindEvents() {
 
 function handleGlobalClick(event) {
   const navButton = event.target.closest('[data-nav]');
+
   if (navButton) {
     const target = navButton.dataset.nav;
+
     if (target === 'home') {
       resetFilters();
       applyFilters();
     }
+
     navigateTo(target);
     return;
   }
 
   const countryCard = event.target.closest('[data-country-search]');
+
   if (countryCard) {
     const value = countryCard.dataset.countrySearch || '';
     setValue('searchInput', value);
@@ -296,6 +329,7 @@ function applyFilters() {
         sticker.country,
         sticker.sigla,
         sticker.group,
+        displayGroupName(sticker.group),
         sticker.number,
         sticker.observations,
       ].join(' ')
@@ -369,24 +403,15 @@ function renderStats() {
   const repeated = state.stickers.reduce((sum, sticker) => sum + repeatedCount(sticker), 0);
   const percent = total ? Math.round((owned / total) * 100) : 0;
 
-  setText('totalCount', total);
-  setText('ownedCount', owned);
-  setText('missingCount', missing);
-  setText('repeatedCount', repeated);
-
   setText('summaryTotalCount', total);
   setText('summaryOwnedCount', owned);
   setText('summaryMissingCount', missing);
   setText('summaryRepeatedCount', repeated);
 
-  setText('progressPercent', `${percent}%`);
   setText('summaryProgressPercent', `${percent}%`);
-
-  setText('progressText', `${owned} de ${total} figurinhas`);
   setText('summaryProgressText', `${owned} de ${total} figurinhas marcadas como tenho.`);
 
-  setWidth('progressBar', `${percent}%`);
-  setWidth('summaryProgressBar', `${percent}%`);
+  setProgress('summaryProgressBar', percent);
 }
 
 function renderHomeCountries() {
@@ -421,7 +446,7 @@ function renderCountryCards(targetId, sections) {
             <div class="country-flag">${flag}</div>
             <div>
               <h3>${escapeHtml(section.country || 'Sem país/seção')}</h3>
-              <p>${escapeHtml(section.group || 'Sem grupo')} • ${escapeHtml(section.sigla || '-')}</p>
+              <p>${escapeHtml(displayGroupName(section.group) || 'Sem grupo')} • ${escapeHtml(section.sigla || '-')}</p>
             </div>
           </div>
 
@@ -431,7 +456,7 @@ function renderCountryCards(targetId, sections) {
           </div>
 
           <div class="progress-track small">
-            <div class="progress-bar" style="width:${percent}%"></div>
+            <div class="progress-bar" style="width:${percent}%; background:${percentColor(percent)}"></div>
           </div>
 
           <div class="country-meta">
@@ -485,7 +510,7 @@ function renderStickerCard(sticker) {
       </div>
 
       <div class="sticker-info">
-        <span>Grupo <strong>${escapeHtml(sticker.group || '-')}</strong></span>
+        <span>Grupo <strong>${escapeHtml(displayGroupName(sticker.group) || '-')}</strong></span>
         <span>Sigla <strong>${escapeHtml(sticker.sigla || '-')}</strong></span>
       </div>
 
@@ -545,7 +570,7 @@ function renderTrade() {
         <article class="trade-item">
           <div>
             <strong>${escapeHtml(sticker.code)}</strong>
-            <p>${flag} ${escapeHtml(sticker.country)} • ${escapeHtml(sticker.group)}</p>
+            <p>${flag} ${escapeHtml(sticker.country)} • ${escapeHtml(displayGroupName(sticker.group))}</p>
           </div>
 
           <button
@@ -638,7 +663,7 @@ function renderGroupProgress() {
     if (isOwned(sticker)) item.owned += 1;
   });
 
-  const items = [...groups.values()].sort((a, b) => a.group.localeCompare(b.group, 'pt-BR'));
+  const items = [...groups.values()].sort((a, b) => sortGroups(a.group, b.group));
 
   if (!items.length) {
     target.innerHTML = emptyMessage('Nenhum grupo encontrado.');
@@ -652,12 +677,12 @@ function renderGroupProgress() {
       return `
         <article class="group-row">
           <div>
-            <strong>${escapeHtml(item.group)}</strong>
+            <strong>${escapeHtml(displayGroupName(item.group))}</strong>
             <span>${item.owned}/${item.total}</span>
           </div>
 
           <div class="progress-track small">
-            <div class="progress-bar" style="width:${percent}%"></div>
+            <div class="progress-bar" style="width:${percent}%; background:${percentColor(percent)}"></div>
           </div>
 
           <b>${percent}%</b>
@@ -886,7 +911,7 @@ function renderScannerResult(sticker, searchedCode) {
     <article class="scan-card">
       <div>
         <strong>${escapeHtml(sticker.code)}</strong>
-        <p>${flag} ${escapeHtml(sticker.country)} • ${escapeHtml(sticker.group)}</p>
+        <p>${flag} ${escapeHtml(sticker.country)} • ${escapeHtml(displayGroupName(sticker.group))}</p>
       </div>
 
       <span class="${owned ? 'status-ok' : 'status-missing'}">
@@ -913,7 +938,7 @@ function exportCsv() {
   const headers = ['Grupo', 'País/Seção', 'Sigla', 'Número', 'Código', 'Status', 'Repetidas', 'Observações'];
 
   const rows = state.stickers.map((sticker) => [
-    sticker.group,
+    displayGroupName(sticker.group),
     sticker.country,
     sticker.sigla,
     sticker.number,
@@ -996,13 +1021,15 @@ function buildGroupFilter() {
   if (!select) return;
 
   const currentValue = select.value || 'all';
-  const groups = [...new Set(state.stickers.map((sticker) => sticker.group).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, 'pt-BR')
-  );
+
+  const groups = [...new Set(state.stickers.map((sticker) => sticker.group).filter(Boolean))]
+    .sort(sortGroups);
 
   select.innerHTML = `
     <option value="all">Todos os grupos</option>
-    ${groups.map((group) => `<option value="${escapeAttr(group)}">${escapeHtml(group)}</option>`).join('')}
+    ${groups
+      .map((group) => `<option value="${escapeAttr(group)}">${escapeHtml(displayGroupName(group))}</option>`)
+      .join('')}
   `;
 
   select.value = groups.includes(currentValue) ? currentValue : 'all';
@@ -1019,6 +1046,7 @@ function buildSearchSuggestions() {
     if (sticker.country) values.add(sticker.country);
     if (sticker.sigla) values.add(sticker.sigla);
     if (sticker.group) values.add(sticker.group);
+    if (displayGroupName(sticker.group)) values.add(displayGroupName(sticker.group));
   });
 
   list.innerHTML = [...values]
@@ -1069,6 +1097,36 @@ function repeatedCount(sticker) {
   return toNumber(sticker?.repeated);
 }
 
+function displayGroupName(group) {
+  const value = normalize(group);
+  const key = normalizeForSearch(value);
+
+  if (key === 'inicial') return 'FWC';
+  if (key === 'fwc') return 'FWC';
+  if (key === 'cc') return 'Coca Cola';
+  if (key === 'cocacola' || key === 'coca cola') return 'Coca Cola';
+
+  return value;
+}
+
+function sortGroups(a, b) {
+  const rankA = groupRank(a);
+  const rankB = groupRank(b);
+
+  if (rankA !== rankB) return rankA - rankB;
+
+  return displayGroupName(a).localeCompare(displayGroupName(b), 'pt-BR');
+}
+
+function groupRank(group) {
+  const name = normalizeForSearch(displayGroupName(group));
+
+  if (name === 'fwc') return -1000;
+  if (name === 'cocacola') return 1000;
+
+  return 0;
+}
+
 function getFlag(sigla, country) {
   const key = normalize(sigla).toUpperCase();
 
@@ -1085,6 +1143,56 @@ function getFlag(sigla, country) {
   if (text.includes('coca')) return '🥤';
 
   return '🏳️';
+}
+
+function setProgress(id, percent) {
+  const element = getEl(id);
+  if (!element) return;
+
+  element.style.width = `${percent}%`;
+  element.style.background = percentColor(percent);
+}
+
+function percentColor(percent) {
+  const value = clampNumber(percent, 0, 100);
+
+  const red = {
+    r: 255,
+    g: 93,
+    b: 87,
+  };
+
+  const yellow = {
+    r: 255,
+    g: 209,
+    b: 90,
+  };
+
+  const green = {
+    r: 50,
+    g: 217,
+    b: 115,
+  };
+
+  if (value <= 50) {
+    const amount = value / 50;
+    return rgbToCss(interpolateColor(red, yellow, amount));
+  }
+
+  const amount = (value - 50) / 50;
+  return rgbToCss(interpolateColor(yellow, green, amount));
+}
+
+function interpolateColor(start, end, amount) {
+  return {
+    r: Math.round(start.r + (end.r - start.r) * amount),
+    g: Math.round(start.g + (end.g - start.g) * amount),
+    b: Math.round(start.b + (end.b - start.b) * amount),
+  };
+}
+
+function rgbToCss(color) {
+  return `rgb(${color.r}, ${color.g}, ${color.b})`;
 }
 
 function pick(object, keys) {
@@ -1124,7 +1232,10 @@ function normalizeForSearch(value) {
   return normalize(value)
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function normalizeKey(value) {
@@ -1134,6 +1245,10 @@ function normalizeKey(value) {
 function toNumber(value) {
   const number = Number(String(value ?? '0').replace(',', '.'));
   return Number.isFinite(number) ? number : 0;
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(Number(value) || 0, min), max);
 }
 
 function getEl(id) {
@@ -1152,11 +1267,6 @@ function setValue(id, value) {
 function setText(id, value) {
   const element = getEl(id);
   if (element) element.textContent = value;
-}
-
-function setWidth(id, value) {
-  const element = getEl(id);
-  if (element) element.style.width = value;
 }
 
 function on(id, eventName, handler) {
