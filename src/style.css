@@ -246,7 +246,7 @@ button:disabled {
 
 .stat-card span {
   display: block;
-  color: var(--muted);
+  color: rgba(245, 248, 255, 0.75);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -260,6 +260,21 @@ button:disabled {
   font-size: 28px;
   line-height: 1;
   letter-spacing: -0.04em;
+}
+
+.stat-card.stat-owned {
+  border-color: rgba(50, 217, 115, 0.38);
+  background: linear-gradient(180deg, rgba(38, 148, 83, 0.96), rgba(13, 74, 40, 0.96));
+}
+
+.stat-card.stat-missing {
+  border-color: rgba(255, 93, 87, 0.42);
+  background: linear-gradient(180deg, rgba(187, 59, 57, 0.96), rgba(98, 26, 32, 0.96));
+}
+
+.stat-card.stat-repeated {
+  border-color: rgba(255, 209, 90, 0.48);
+  background: linear-gradient(180deg, rgba(189, 139, 34, 0.96), rgba(104, 72, 19, 0.96));
 }
 
 .progress-card,
@@ -304,8 +319,10 @@ button:disabled {
   width: 0%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--red), #ff9c2e, #ffd447, var(--green));
-  transition: width 260ms ease-out;
+  background: var(--green);
+  transition:
+    width 260ms ease-out,
+    background 260ms ease-out;
 }
 
 .result-count {
@@ -857,7 +874,6 @@ button:disabled {
   box-shadow:
     0 0 0 999px rgba(0, 0, 0, 0.18),
     inset 0 0 0 999px rgba(255, 255, 255, 0.02);
-}
 }
 
 .camera-box::after {
