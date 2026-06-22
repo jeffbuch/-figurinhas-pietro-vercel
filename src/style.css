@@ -849,10 +849,15 @@ button:disabled {
   height: 58%;
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(2px);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   pointer-events: none;
   z-index: 2;
+  box-shadow:
+    0 0 0 999px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 999px rgba(255, 255, 255, 0.02);
+}
 }
 
 .camera-box::after {
@@ -877,11 +882,13 @@ button:disabled {
   border: 3px solid var(--green);
   border-radius: 10px;
   background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   pointer-events: none;
-  z-index: 4;
+  z-index: 5;
   box-shadow:
-    0 0 0 999px rgba(0, 0, 0, 0),
-    0 0 0 2px rgba(50, 217, 115, 0.08);
+    0 0 0 2px rgba(50, 217, 115, 0.12),
+    0 0 18px rgba(50, 217, 115, 0.28);
 }
 
 .scan-frame span {
