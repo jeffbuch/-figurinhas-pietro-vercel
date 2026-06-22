@@ -65,8 +65,20 @@ function initApp() {
   loadTradeFromStorage();
   setupWakeLock();
   bindEvents();
+  setupSortOptionLabels();
   setupScrollAssist();
   fetchData();
+}
+
+
+function setupSortOptionLabels() {
+  const sortFilter = getEl('sortFilter');
+  if (!sortFilter) return;
+
+  const countryOption = sortFilter.querySelector('option[value="country"]');
+  if (countryOption) {
+    countryOption.textContent = 'Alfabética';
+  }
 }
 
 function setupWakeLock() {
@@ -811,26 +823,23 @@ async function confirmTrade() {
   renderAll();
 
   try {
-    const updates = items.map((sticker) => ({
-      code: sticker.code,
-      codigo: sticker.code,
-      Código: sticker.code,
-      status: STATUS_OWNED,
-      Status: STATUS_OWNED,
-      rowNumber: sticker.rowNumber,
-      row: sticker.rowNumber,
-    }));
+    if (items.length === 1) {
+      await sendStickerUpdate(items[0]);
+    } else {
+      const updates = items.map((sticker) => ({
+        code: sticker.code,
+        codigo: sticker.code,
+        Código: sticker.code,
+        status: STATUS_OWNED,
+        Status: STATUS_OWNED,
+        repeated: repeatedCount(sticker),
+        repetidas: repeatedCount(sticker),
+        Repetidas: repeatedCount(sticker),
+        rowNumber: sticker.rowNumber,
+        row: sticker.rowNumber,
+      }));
 
-    const response = await fetch(API_UPDATE_MANY, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ updates }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro updateMany: ${response.status}`);
+      await sendManyUpdate(updates);
     }
 
     state.trade.clear();
@@ -839,16 +848,62 @@ async function confirmTrade() {
 
     showToast('Troca efetivada.');
   } catch (error) {
-    console.error(error);
+    console.warn('updateMany falhou. Tentando atualizar uma por uma...', error);
 
-    previous.forEach((item) => {
-      const sticker = findSticker(item.code);
-      if (sticker) sticker.status = item.status;
-    });
+    try {
+      for (const sticker of items) {
+        await sendStickerUpdate(sticker);
+      }
 
-    renderAll();
-    showToast('Erro ao efetivar troca.');
+      state.trade.clear();
+      saveTradeToStorage();
+      renderAll();
+
+      showToast('Troca efetivada.');
+    } catch (fallbackError) {
+      console.error(fallbackError);
+
+      previous.forEach((item) => {
+        const sticker = findSticker(item.code);
+        if (sticker) sticker.status = item.status;
+      });
+
+      renderAll();
+      showToast('Erro ao efetivar troca.');
+    }
   }
+}
+
+async function sendManyUpdate(updates) {
+  const payloads = [
+    { updates },
+    { stickers: updates },
+    updates,
+  ];
+
+  let lastError = null;
+
+  for (const payload of payloads) {
+    try {
+      const response = await fetch(API_UPDATE_MANY, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        return response.json().catch(() => ({}));
+      }
+
+      lastError = new Error(`Erro updateMany: ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Erro updateMany.');
 }
 
 function clearTrade() {
