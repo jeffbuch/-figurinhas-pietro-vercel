@@ -15,6 +15,7 @@ const state = {
   selectedScanCode: null,
   loading: false,
   wakeLock: null,
+  scrollAssistReady: false,
 };
 
 const viewMap = {
@@ -64,6 +65,7 @@ function initApp() {
   loadTradeFromStorage();
   setupWakeLock();
   bindEvents();
+  setupScrollAssist();
   fetchData();
 }
 
@@ -394,6 +396,7 @@ function renderAll() {
   renderTrade();
   renderSummary();
   updateScanActions();
+  refreshScrollAssist();
 }
 
 function renderStats() {
@@ -1125,6 +1128,187 @@ function groupRank(group) {
   if (name === 'cc' || name === 'cocacola') return 1000;
 
   return 0;
+}
+
+
+function setupScrollAssist() {
+  if (state.scrollAssistReady) return;
+  if (document.querySelector('.scroll-assist')) return;
+
+  const assist = document.createElement('div');
+  assist.className = 'scroll-assist';
+  assist.innerHTML = `
+    <div class="scroll-assist-track" aria-hidden="true">
+      <div class="scroll-assist-thumb"></div>
+    </div>
+  `;
+
+  document.body.appendChild(assist);
+
+  const track = assist.querySelector('.scroll-assist-track');
+  const thumb = assist.querySelector('.scroll-assist-thumb');
+
+  if (!track || !thumb) return;
+
+  state.scrollAssistReady = true;
+
+  let isDragging = false;
+  let hideTimer = null;
+  let dragOffset = 0;
+
+  const getPointerY = (event) => {
+    if (event.touches && event.touches.length) return event.touches[0].clientY;
+    if (event.changedTouches && event.changedTouches.length) return event.changedTouches[0].clientY;
+    return event.clientY;
+  };
+
+  const getMaxScroll = () => {
+    const documentHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight
+    );
+
+    return Math.max(documentHeight - window.innerHeight, 0);
+  };
+
+  const getMetrics = () => {
+    const rect = track.getBoundingClientRect();
+    const documentHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+      1
+    );
+    const maxScroll = getMaxScroll();
+    const thumbHeight = Math.max(
+      72,
+      Math.min(rect.height, (window.innerHeight / documentHeight) * rect.height)
+    );
+    const movableHeight = Math.max(rect.height - thumbHeight, 1);
+
+    return {
+      rect,
+      maxScroll,
+      thumbHeight,
+      movableHeight,
+    };
+  };
+
+  const showScrollAssist = () => {
+    assist.classList.add('is-active');
+
+    window.clearTimeout(hideTimer);
+
+    if (!isDragging) {
+      hideTimer = window.setTimeout(() => {
+        assist.classList.remove('is-active');
+      }, 1400);
+    }
+  };
+
+  const updateScrollAssist = (expand = false) => {
+    const maxScroll = getMaxScroll();
+
+    if (maxScroll <= 8) {
+      assist.classList.add('hidden');
+      return;
+    }
+
+    assist.classList.remove('hidden');
+
+    const { thumbHeight, movableHeight } = getMetrics();
+    const top = (window.scrollY / maxScroll) * movableHeight;
+
+    thumb.style.height = `${thumbHeight}px`;
+    thumb.style.transform = `translate3d(0, ${top}px, 0)`;
+
+    if (expand) showScrollAssist();
+  };
+
+  const scrollFromPointer = (clientY, centerThumb = false) => {
+    const { rect, maxScroll, thumbHeight, movableHeight } = getMetrics();
+    const offset = centerThumb ? thumbHeight / 2 : dragOffset;
+    const ratio = clampNumber((clientY - rect.top - offset) / movableHeight, 0, 1);
+
+    window.scrollTo({
+      top: ratio * maxScroll,
+      behavior: 'auto',
+    });
+  };
+
+  const startDrag = (event) => {
+    if (getMaxScroll() <= 8) return;
+
+    isDragging = true;
+    assist.classList.add('is-active', 'is-dragging');
+
+    const clientY = getPointerY(event);
+    const { rect, maxScroll, thumbHeight, movableHeight } = getMetrics();
+    const currentThumbTop = rect.top + (window.scrollY / Math.max(maxScroll, 1)) * movableHeight;
+    const isInsideThumb = clientY >= currentThumbTop && clientY <= currentThumbTop + thumbHeight;
+
+    dragOffset = isInsideThumb ? clientY - currentThumbTop : thumbHeight / 2;
+    scrollFromPointer(clientY, !isInsideThumb);
+    updateScrollAssist(true);
+
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const moveDrag = (event) => {
+    if (!isDragging) return;
+
+    scrollFromPointer(getPointerY(event));
+    updateScrollAssist(true);
+
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const endDrag = () => {
+    if (!isDragging) return;
+
+    isDragging = false;
+    assist.classList.remove('is-dragging');
+    showScrollAssist();
+  };
+
+  track.addEventListener('touchstart', startDrag, { passive: false });
+  window.addEventListener('touchmove', moveDrag, { passive: false });
+  window.addEventListener('touchend', endDrag, { passive: true });
+  window.addEventListener('touchcancel', endDrag, { passive: true });
+
+  track.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', moveDrag);
+  window.addEventListener('mouseup', endDrag);
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      window.requestAnimationFrame(() => updateScrollAssist(true));
+    },
+    { passive: true }
+  );
+
+  window.addEventListener(
+    'resize',
+    () => {
+      window.requestAnimationFrame(() => updateScrollAssist(false));
+    },
+    { passive: true }
+  );
+
+  window.refreshScrollAssist = () => updateScrollAssist(false);
+
+  window.setTimeout(() => updateScrollAssist(false), 120);
+}
+
+function refreshScrollAssist() {
+  if (typeof window.refreshScrollAssist !== 'function') return;
+
+  window.requestAnimationFrame(() => {
+    window.refreshScrollAssist();
+    window.setTimeout(window.refreshScrollAssist, 80);
+  });
 }
 
 function getFlag(sigla, country) {
