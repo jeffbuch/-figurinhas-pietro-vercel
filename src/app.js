@@ -1119,10 +1119,10 @@ function sortGroups(a, b) {
 }
 
 function groupRank(group) {
-  const name = normalizeForSearch(displayGroupName(group));
+  const name = normalizeForSearch(displayGroupName(group)).replace(/\s+/g, '');
 
-  if (name === 'fwc') return -1000;
-  if (name === 'cocacola') return 1000;
+  if (name === 'fwc' || name === 'inicial') return -1000;
+  if (name === 'cc' || name === 'cocacola') return 1000;
 
   return 0;
 }
