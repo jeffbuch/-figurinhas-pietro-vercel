@@ -1187,3 +1187,85 @@ body {
 ::-webkit-scrollbar-corner {
   background: rgba(4, 13, 27, 0.92);
 }
+
+/* =========================================================
+   Ajuste: barra lateral touch para navegar com o dedo
+   A barra aparece/aumenta durante o scroll e pode ser arrastada.
+   ========================================================= */
+.scroll-assist {
+  position: fixed;
+  top: calc(82px + var(--safe-top));
+  right: 0;
+  bottom: calc(104px + var(--safe-bottom));
+  z-index: 90;
+  width: 40px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.scroll-assist-track {
+  position: absolute;
+  top: 0;
+  right: 5px;
+  bottom: 0;
+  width: 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0.48;
+  pointer-events: auto;
+  touch-action: none;
+  transition:
+    width 160ms ease,
+    right 160ms ease,
+    opacity 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scroll-assist-thumb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  min-height: 72px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(95, 176, 255, 0.96), rgba(47, 140, 255, 0.96));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 8px 24px rgba(47, 140, 255, 0.24);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scroll-assist.is-active .scroll-assist-track,
+.scroll-assist.is-dragging .scroll-assist-track {
+  right: 4px;
+  width: 30px;
+  background: rgba(47, 140, 255, 0.15);
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 1px rgba(95, 176, 255, 0.28),
+    0 0 22px rgba(47, 140, 255, 0.18);
+}
+
+.scroll-assist.is-active .scroll-assist-thumb,
+.scroll-assist.is-dragging .scroll-assist-thumb {
+  background: linear-gradient(180deg, rgba(124, 195, 255, 1), rgba(47, 140, 255, 1));
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.2),
+    0 10px 30px rgba(47, 140, 255, 0.38);
+}
+
+.scroll-assist.hidden {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  .scroll-assist {
+    right: calc((100vw - 760px) / 2);
+  }
+}
+
