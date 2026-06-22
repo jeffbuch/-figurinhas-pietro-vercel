@@ -3,7 +3,7 @@ const OCR_SCRIPT_URLS = [
   'https://unpkg.com/tesseract.js@4.1.4/dist/tesseract.min.js',
 ];
 
-const AUTO_SCAN_INTERVAL = 1600;
+const AUTO_SCAN_INTERVAL = 1400;
 
 const VALID_PREFIXES = [
   'FIFA',
@@ -34,6 +34,7 @@ const VALID_PREFIXES = [
   'GHA',
   'NGR',
   'UZB',
+  'RSA',
   'CC',
 ];
 
@@ -117,7 +118,7 @@ async function openScanner() {
     await waitForVideo(video);
     await video.play();
 
-    showScannerResult('Enquadre a figurinha inteira. O sistema vai ler só a área clara do código.');
+    showScannerResult('Enquadre a figurinha inteira no guia branco. O sistema vai ler só a caixa do código no canto superior direito.');
     startAutoScan();
   } catch (error) {
     console.error(error);
@@ -163,7 +164,7 @@ function startAutoScan() {
 
   window.setTimeout(() => {
     scanOnce({ manual: false });
-  }, 800);
+  }, 900);
 }
 
 function stopAutoScan() {
@@ -195,12 +196,11 @@ async function scanOnce({ manual = false } = {}) {
     showScannerResult(
       manual
         ? 'Escaneando agora...'
-        : 'Procurando código automaticamente... mantenha a figurinha inteira no guia.'
+        : 'Procurando código automaticamente... mantenha a figurinha no guia.'
     );
 
-    const croppedCanvas = captureCodeArea();
+    const croppedCanvas = captureCodeAreaOnly();
     const preparedCanvas = prepareForOCR(croppedCanvas);
-
     const text = await recognizeText(preparedCanvas);
 
     if (!scannerState.isOpen) return;
@@ -214,6 +214,10 @@ async function scanOnce({ manual = false } = {}) {
       showScannerResult(`Código reconhecido: ${code}`);
       dispatchScannerCode(code);
 
+      if (navigator.vibrate) {
+        navigator.vibrate(120);
+      }
+
       window.setTimeout(() => {
         closeScanner();
       }, 650);
@@ -223,8 +227,8 @@ async function scanOnce({ manual = false } = {}) {
 
     showScannerResult(
       manual
-        ? 'Não consegui ler o código. Tente manter a figurinha inteira no guia ou digite manualmente.'
-        : 'Ainda procurando... mantenha a figurinha inteira visível e o código no quadro claro.'
+        ? 'Não consegui ler o código. Tente alinhar a figurinha ou digite manualmente.'
+        : 'Ainda procurando... deixe a figurinha inteira no guia e o código dentro da caixa verde.'
     );
   } catch (error) {
     console.error(error);
@@ -239,21 +243,21 @@ async function scanOnce({ manual = false } = {}) {
   }
 }
 
-function captureCodeArea() {
+function captureCodeAreaOnly() {
   const video = getEl('cameraVideo');
-  const frame = document.querySelector('.scan-frame');
+  const codeFrame = document.querySelector('.scan-frame');
 
   const sourceWidth = video.videoWidth;
   const sourceHeight = video.videoHeight;
 
-  let sx = sourceWidth * 0.60;
-  let sy = sourceHeight * 0.12;
-  let sw = sourceWidth * 0.25;
-  let sh = sourceHeight * 0.12;
+  let sx = sourceWidth * 0.58;
+  let sy = sourceHeight * 0.20;
+  let sw = sourceWidth * 0.20;
+  let sh = sourceHeight * 0.08;
 
-  if (frame) {
+  if (codeFrame) {
     const videoRect = video.getBoundingClientRect();
-    const frameRect = frame.getBoundingClientRect();
+    const frameRect = codeFrame.getBoundingClientRect();
 
     const scale = Math.max(videoRect.width / sourceWidth, videoRect.height / sourceHeight);
     const displayedWidth = sourceWidth * scale;
@@ -273,7 +277,7 @@ function captureCodeArea() {
   sw = clamp(sw, 1, sourceWidth - sx);
   sh = clamp(sh, 1, sourceHeight - sy);
 
-  const paddingX = sw * 0.10;
+  const paddingX = sw * 0.08;
   const paddingY = sh * 0.18;
 
   sx = clamp(sx - paddingX, 0, sourceWidth - 1);
@@ -292,7 +296,7 @@ function captureCodeArea() {
 }
 
 function prepareForOCR(sourceCanvas) {
-  const upscale = 2.2;
+  const upscale = 3;
 
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(sourceCanvas.width * upscale));
@@ -313,10 +317,10 @@ function prepareForOCR(sourceCanvas) {
     const blue = data[index + 2];
 
     let gray = red * 0.299 + green * 0.587 + blue * 0.114;
-    gray = (gray - 128) * 1.9 + 128;
+    gray = (gray - 128) * 2.1 + 128;
     gray = clamp(gray, 0, 255);
 
-    const binary = gray > 150 ? 255 : 0;
+    const binary = gray > 145 ? 255 : 0;
 
     data[index] = binary;
     data[index + 1] = binary;
@@ -415,7 +419,9 @@ function extractStickerCode(rawText) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^A-Z0-9]/g, '');
 
-  for (const prefix of VALID_PREFIXES.sort((a, b) => b.length - a.length)) {
+  const sortedPrefixes = [...VALID_PREFIXES].sort((a, b) => b.length - a.length);
+
+  for (const prefix of sortedPrefixes) {
     const match = compact.match(new RegExp(`${prefix}([0-9]{1,3})`));
 
     if (match) {
@@ -435,7 +441,18 @@ function extractStickerCode(rawText) {
     const prefix = genericMatch[1];
     const number = fixNumberOCR(genericMatch[2]);
 
-    if (!['CODIGO', 'CAMERA', 'SCAN', 'OCR', 'FIFAWORLDCUP'].includes(prefix)) {
+    if (
+      ![
+        'CODIGO',
+        'CAMERA',
+        'SCAN',
+        'OCR',
+        'FIFA',
+        'WORLD',
+        'CUP',
+        'PANINI',
+      ].includes(prefix)
+    ) {
       return `${prefix}${number}`;
     }
   }
